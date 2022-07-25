@@ -1,0 +1,31 @@
+type BillingRequest {
+    id: ID!
+    userId: ID!
+    query: String!
+    risk: Int!
+    category: String!
+    network: String!
+    createdAt: DateTime!
+}
+
+type BillingPacket {
+    id: ID!
+    userId: ID!
+    requests: Int!
+    createdAt: DateTime!
+}
+
+type BillingHistoryListResponse {
+    errors: Any
+    total: Int
+    edge: [BillingRequest!]!
+}
+
+extend type Query {
+    billingHistoryList(page: Int!, pageSize: Int!): BillingHistoryListResponse! @auth
+}
+
+extend type Mutation {
+    billingAddPacket(userId: ID!, requests: Int!): BillingAddPacketResponse! @auth(permissions: ["billing.add_packet"])
+}
+

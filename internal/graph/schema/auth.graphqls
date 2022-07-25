@@ -1,0 +1,107 @@
+type Jwt {
+    id: ID!
+    accessToken: String!
+    permissions: [String!]!
+    refreshToken: String!
+}
+
+# Signup
+input RegistrationInput {
+    name: String!
+    email: String!
+    password: String!
+    passwordConfirm: String!
+}
+
+# Signup confirmation
+input RegistrationConfirmInput {
+    token: String
+}
+
+# Sign in by email & password
+input LoginInput {
+    email: String!
+    password: String!
+}
+
+# Restore password
+input RestoreInput {
+    email: String
+}
+
+# Restore password check
+input RestoreCheckInput {
+    token: String
+}
+
+# Restore password confirm & change password
+input RestoreConfirmInput {
+    token: String
+    password: String
+    passwordConfirm: String
+}
+
+# Refresh access & refresh jwt tokens
+input RefreshTokenInput {
+    token: String
+}
+
+# Change user password
+input ChangePasswordInput {
+    passwordCurrent: String!
+    password: String!
+    passwordConfirm: String!
+}
+
+type RestoreResponse {
+    state: Boolean!
+    errors: Any
+}
+
+type RestoreConfirmResponse {
+    jwt: Jwt
+    errors: Any
+}
+
+type RegistrationConfirmResponse {
+    jwt: Jwt
+    errors: Any
+}
+
+type RegistrationResponse {
+    state: Boolean!
+    errors: Any
+}
+
+type LoginResponse {
+    jwt: Jwt
+    errors: Any
+}
+
+type ChangePasswordResponse {
+    jwt: Jwt
+    errors: Any
+}
+
+type RefreshTokenResponse {
+    result: Jwt
+    errors: Any
+}
+
+extend type Query {
+    me: User! @auth
+}
+
+extend type Mutation {
+    login(input: LoginInput!): LoginResponse!
+    refreshToken(input: RefreshTokenInput!): RefreshTokenResponse!
+
+    restore(input: RestoreInput!): RestoreResponse!
+    restoreCheck(input: RestoreCheckInput!): RestoreResponse!
+    restoreConfirm(input: RestoreConfirmInput!): RestoreConfirmResponse!
+
+    registration(input: RegistrationInput!): RegistrationResponse!
+    registrationConfirm(input: RegistrationConfirmInput!): RegistrationConfirmResponse!
+
+    changePassword(input: ChangePasswordInput!): ChangePasswordResponse! @auth
+}

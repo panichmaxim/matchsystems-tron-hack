@@ -1,0 +1,49 @@
+schema:
+  - internal/graph/schema/*.graphqls
+exec:
+  filename: internal/graph/generated/generated.go
+  package: generated
+model:
+  filename: internal/graph/model/models_gen.go
+  package: model
+resolver:
+  layout: follow-schema
+  dir: internal/graph/resolver
+  package: resolver
+autobind:
+  - "gitlab.com/rubin-dev/api/internal/graph/model"
+models:
+  Node:
+    model: gitlab.com/rubin-dev/api/pkg/neoutils.Node
+  Entity:
+    model: gitlab.com/rubin-dev/api/pkg/elastic.Entity
+  Category:
+    model: gitlab.com/rubin-dev/api/pkg/models.Category
+  BillingRequest:
+    model: gitlab.com/rubin-dev/api/pkg/models.BillingRequest
+  BillingPacket:
+    model: gitlab.com/rubin-dev/api/pkg/models.BillingPacket
+  BillingKey:
+    model: gitlab.com/rubin-dev/api/pkg/models.BillingKey
+  User:
+    model: gitlab.com/rubin-dev/api/pkg/models.User
+  Jwt:
+    model: gitlab.com/rubin-dev/api/pkg/models.Jwt
+  # generic types
+  Integer:
+    model: github.com/99designs/gqlgen/graphql.Int
+  ID:
+    model:
+      - github.com/99designs/gqlgen/graphql.Int64
+      - github.com/99designs/gqlgen/graphql.Int32
+      - github.com/99designs/gqlgen/graphql.Int
+      - github.com/99designs/gqlgen/graphql.ID
+  Int64:
+    model:
+      - github.com/99designs/gqlgen/graphql.Int64
+  Int32:
+    model:
+      - github.com/99designs/gqlgen/graphql.Int32
+  Int:
+    model:
+      - github.com/99designs/gqlgen/graphql.Int

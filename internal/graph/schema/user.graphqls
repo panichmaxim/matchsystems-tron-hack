@@ -1,0 +1,21 @@
+type User {
+    id: ID!
+    name: String!
+    email: String!
+    isActive: Boolean!
+    createdAt: String!
+    updatedAt: String!
+    billing: Billing!
+    permissions: [String!]! @auth(permissions: ["user.show_permissions"])
+}
+
+type UserListResponse {
+    errors: Any
+    total: Int
+    edge: [User!]!
+}
+
+extend type Query {
+    user(id: ID!): User!
+    userList(page: Int!, pageSize: Int!): UserListResponse! @auth(permissions: ["user.list"])
+}

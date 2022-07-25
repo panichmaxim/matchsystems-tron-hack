@@ -1,0 +1,45 @@
+stages:
+  - install
+  - test
+
+.cache: &cache
+  paths:
+    - $CI_PROJECT_DIR/.go/pkg/mod/
+    - /go/src/github.com
+    - /go/src/gitlab.com
+    - /go/src/golang.org
+    - /go/src/google.golang.org
+    - /go/src/gopkg.in
+
+before_script:
+  - apk add --no-cache --update git build-base
+  - mkdir -p $CI_PROJECT_DIR/.go
+  - git config --global url."https://go:wrsvsVYht6RosEMJECVJ@gitlab.com/falaleev-golang/".insteadOf "https://gitlab.com/falaleev-golang/"
+
+variables:
+  GOPATH: $CI_PROJECT_DIR/.go
+  GO_PKG_PATH: /go/src/gitlab.com/falaleev-golang/mailgate
+  IMAGE: golang:1.16-alpine
+
+#################################################### install
+
+install:
+  stage: install
+  image: $IMAGE
+  script:
+    - go mod download
+  cache:
+    policy: pull-push
+    <<: *cache
+
+.test_template:
+  stage: test
+  image: $IMAGE
+  cache:
+    policy: pull
+    <<: *cache
+
+test:
+  extends: .test_template
+  script:
+    - go test -race -p 1 -short ./...

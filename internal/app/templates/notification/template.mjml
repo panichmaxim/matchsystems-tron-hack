@@ -1,0 +1,19 @@
+<mjml>
+    <mj-body>
+        <mj-section>
+            <mj-column>
+                <mj-text align="center">
+                  <h1>MatchSystems</h1>
+                </mj-text>
+                <mj-divider border-width="1px" border-color="#ccc"></mj-divider>
+                <mj-text font-size="15px" align="center" color="#000" font-family="helvetica">
+                    {{ text }}
+                </mj-text>
+                <mj-divider border-width="1px" border-color="#ccc"></mj-divider>
+                <mj-text font-size="14px" align="center" color="#aaa" font-family="helvetica">
+                    MatchSystems. All right reserved.
+                </mj-text>
+            </mj-column>
+        </mj-section>
+    </mj-body>
+</mjml>

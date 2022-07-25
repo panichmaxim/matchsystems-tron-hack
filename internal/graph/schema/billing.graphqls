@@ -1,0 +1,9 @@
+type Billing {
+    requests: Int!
+    historyRequests: Int!
+}
+
+type BillingAddPacketResponse {
+    errors: Any
+    billing: BillingPacket
+}

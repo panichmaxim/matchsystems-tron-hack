@@ -1,0 +1,22 @@
+type BillingKey {
+    id: ID!
+    userId: ID!
+    billingId: ID!
+    key: String!
+    createdAt: DateTime!
+}
+
+type BillingKeyResponse {
+    errors: Any
+    total: Int
+    edge: [BillingKey!]!
+}
+
+extend type Query {
+    billingKeyList(page: Int!, pageSize: Int!): BillingKeyResponse! @auth
+}
+
+extend type Mutation {
+    billingKeyCreate: BillingKey! @auth
+    billingKeyRemove(id: ID!): Boolean! @auth
+}

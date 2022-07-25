@@ -1,0 +1,17 @@
+- model: AuthToken
+  rows:
+    - user_id: 1
+      id: "e67ac5a1-1c29-4a8e-aef4-7f1514ac9dd6"
+      access_token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIxNjEzMDg2Mi02ODdlLTQ1NzgtYjFmMC04YTllNDIwZTI1M2QiLCJhdWQiOiJ1c2VyIiwiZXhwIjoxNjUxNDAwMDk2LCJpYXQiOjE2NTEzOTY0OTZ9.0qSZOBtv0hBjgCLc6LZZVhS02bLI-vwQ2asVlvvFWYc"
+      access_expired_at: "{{ next_day }}"
+      refresh_token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIxNjEzMDg2Mi02ODdlLTQ1NzgtYjFmMC04YTllNDIwZTI1M2QiLCJhdWQiOiJyZWZyZXNoIiwiZXhwIjoxNjUxNDgyODk2LCJpYXQiOjE2NTEzOTY0OTZ9.inCnuXNHZdC1oMiQDS5aLMoyX5Qp2oQ2koiroC4ZFkM"
+      refresh_expired_at: "{{ next_week }}"
+      issued_at: "{{ now }}"
+- model: User
+  rows:
+    - name: admin
+      email: admin@example.com
+      is_active: true
+      password: $2a$14$RDkA8108s4dE53APoGJk.uC2/nhR6f6wf08h8HDcavkD4BGKlYL.2
+      permissions:
+        - admin

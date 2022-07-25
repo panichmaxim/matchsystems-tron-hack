@@ -1,0 +1,8 @@
+scalar Upload
+scalar Date
+scalar DateTime
+scalar JSON
+scalar Integer
+scalar Int64
+scalar Map
+scalar Any

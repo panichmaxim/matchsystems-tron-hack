@@ -1,0 +1,4 @@
+# Authentication required
+directive @auth(permissions: [String!]) on FIELD_DEFINITION
+# Authentication via refresh token
+directive @authRefresh on FIELD_DEFINITION

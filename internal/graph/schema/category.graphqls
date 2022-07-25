@@ -1,0 +1,52 @@
+type Category {
+    id: ID!
+    name: String!
+    descriptionRu: String!
+    descriptionEn: String!
+    risk: Int!
+}
+
+type CategoryListResponse {
+    errors: Any
+    total: Int
+    edge: [Category!]!
+}
+
+type CategoryCreateResponse {
+    errors: Any
+    category: Category
+}
+
+type CategoryUpdateResponse {
+    errors: Any
+    category: Category
+}
+
+type CategoryRemoveResponse {
+    errors: Any
+}
+
+input CategoryCreateInput {
+    name: String!
+    descriptionRu: String!
+    descriptionEn: String!
+    risk: Int!
+}
+
+input CategoryUpdateInput {
+    name: String
+    descriptionRu: String
+    descriptionEn: String
+    risk: Int
+}
+
+extend type Query {
+    categoryList: CategoryListResponse! @auth(permissions: ["category"])
+    categoryFindById(id: ID!): Category @auth(permissions: ["category"])
+}
+
+extend type Mutation {
+    categoryCreate(input: CategoryCreateInput!): CategoryCreateResponse! @auth(permissions: ["category"])
+    categoryUpdate(id: ID!, input: CategoryUpdateInput!): CategoryUpdateResponse! @auth(permissions: ["category"])
+    categoryRemoveById(id: ID!): CategoryRemoveResponse @auth(permissions: ["category"])
+}

@@ -1,0 +1,11 @@
+type Query {
+    health: Boolean!
+}
+
+type Subscription {
+    health: Boolean!
+}
+
+type Mutation {
+    health: Boolean!
+}

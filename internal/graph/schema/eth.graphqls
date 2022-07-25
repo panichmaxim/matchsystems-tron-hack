@@ -1,0 +1,15 @@
+extend type Query {
+    ethFindAddressByHash(address: String!): NodeEntityResponse!
+    ethFindTransactionsByAddress(hash: String!, page: Int!, pageSize: Int!): NodeListResponse!
+    ethFindTransactionByHash(hash: String!): NodeEntityResponse!
+    ethFindIncomingTransactionAddress(hash: String!): NodeEntityResponse!
+    ethFindOutcomingTransactionAddress(hash: String!): NodeEntityResponse!
+    ethFindBlockByTransaction(hash: String!): NodeEntityResponse!
+    ethFindBlockByHeight(height: String!): NodeEntityResponse!
+    ethFindTransactionsInBlock(height: String!, page: Int!, pageSize: Int!): NodeListResponse!
+    ethFindAllInputAndOutputTransactions(hash: String!, page: Int!, pageSize: Int!): NodeListResponse!
+    ethFindBlockByHash(hash: String!): NodeEntityResponse!
+    ethFindMentionsByAddress(address: String!, page: Int!, pageSize: Int!): NodeListResponse!
+    ethFindContactByAddress(address: String!): NodeEntityResponse!
+    ethFindRiskScoreByAddress(address: String!): NodeEntityResponse!
+}

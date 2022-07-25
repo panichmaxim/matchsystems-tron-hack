@@ -1,0 +1,12 @@
+{
+  "license": "COMMERCIAL",
+  "private": true,
+  "scripts": {
+    "email-templates": "npm run email-template-action && npm run email-template-notification",
+    "email-template-action": "npm mjml ./internal/app/templates/action/template.mjml -o ./internal/app/templates/action/html.jet",
+    "email-template-notification": "npm mjml ./internal/app/templates/notification/template.mjml -o ./internal/app/templates/notification/html.jet"
+  },
+  "dependencies": {
+    "mjml": "^4.12.0"
+  }
+}

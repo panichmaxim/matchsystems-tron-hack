@@ -1,0 +1,21 @@
+type Node {
+    id: Int64!
+    labels: [String!]!
+    props: Any
+}
+
+type NodeListResponse {
+    errors: Any
+    total: Int
+    edge: [Node!]!
+}
+
+type NodeEntityResponse {
+    errors: Any
+    node: Node
+}
+
+type NodeCountResponse {
+    errors: Any
+    has: Boolean
+}
