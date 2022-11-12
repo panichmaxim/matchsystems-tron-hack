@@ -5,6 +5,6 @@ import (
 )
 
 type Client interface {
-	Search(ctx context.Context, value string, page, limit int) ([]*Entity, int, error)
-	SearchCount(ctx context.Context, value string) (int, error)
+	Search(ctx context.Context, value string, page, limit int, wildcard bool) ([]*Entity, int, error)
+	SearchCount(ctx context.Context, value string, wildcard bool) (int, error)
 }

@@ -22,7 +22,10 @@ func TestBitcoinHashBlockValidation(t *testing.T) {
 }
 
 func TestBitcoinAddressValidation(t *testing.T) {
-	matched := btcAddressRegex.MatchString("bc1qm34lsc65zpw79lxes69zkqmk6ee3ewf0j77s3h")
+	matched := btcAddressRegex.MatchString("111111111111111111112BEH2ro")
+	require.True(t, matched)
+
+	matched = btcAddressRegex.MatchString("bc1qm34lsc65zpw79lxes69zkqmk6ee3ewf0j77s3h")
 	require.True(t, matched)
 
 	matched = btcAddressRegex.MatchString("35bdfMb4LwToWsZH36fwZZkFTMHES8kzFg")

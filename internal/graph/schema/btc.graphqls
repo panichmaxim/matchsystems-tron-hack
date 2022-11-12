@@ -1,22 +1,19 @@
 extend type Query {
-    btcExistsAddressByHashCount(address: String!): NodeCountResponse!
-    btcExistsTransactionByHashCount(address: String!): NodeCountResponse!
-
-    btcFindContactByAddress(address: String!): NodeEntityResponse!
+    btcFindContactByAddress(address: String!): NodeEntityResponse! @auth(permissions: ["subscription.explorer.contacts"])
     btcFindTransactionByHash(address: String!): NodeEntityResponse!
-    btcFindAddressByHash(address: String!): NodeEntityResponse!
+    btcFindAddressByHash(address: String!): FindAddressByHashNodeResponse!
     btcFindWalletForAddress(address: String!): NodeEntityResponse!
-    btcFindRiskScore(address: String!): NodeEntityResponse!
+    btcRisk(address: String!): RiskResponse! @auth(permissions: ["subscription.explorer.riskscore"])
     btcFindBlockByNumber(height: Int!): NodeEntityResponse!
     btcFindBlockByHash(hash: String!): NodeEntityResponse!
     btcFindBlockByTransaction(txid: String!): NodeEntityResponse!
     btcFindTransactionsByAddress(address: String!, page: Int!, pageSize: Int!): NodeListResponse!
-    btcFindMentionsForAddress(address: String!, page: Int!, pageSize: Int!): NodeListResponse!
+    btcFindMentionsForAddress(address: String!, page: Int!, pageSize: Int!): NodeListResponse! @auth(permissions: ["subscription.explorer.mentions"])
     btcFindIncomingTransactions(txid: String!, page: Int!, pageSize: Int!): NodeListResponse!
     btcFindOutcomingTransactions(txid: String!, page: Int!, pageSize: Int!): NodeListResponse!
     btcFindTransactionsInBlock(height: Int!, page: Int!, pageSize: Int!): NodeListResponse!
-    btcFindAllInputAndOutputByTransaction(txid: String!, page: Int!, pageSize: Int!): NodeListResponse!
     btcFindTransactionsInBlockByHash(hash: String!, page: Int!, pageSize: Int!): NodeListResponse!
     btcFindWalletByWid(wid: String!): NodeEntityResponse!
     btcFindWalletAddresses(wid: String!, page: Int!, pageSize: Int!): NodeListResponse!
+    btcSearch(query: String!, page: Int! = 0, limit: Int! = 100, wildcard: Boolean): SearchResponse! @auth(permissions: ["subscription.explorer.mentions"])
 }

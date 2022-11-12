@@ -5,7 +5,7 @@ package model
 import (
 	"gitlab.com/rubin-dev/api/pkg/elastic"
 	"gitlab.com/rubin-dev/api/pkg/models"
-	"gitlab.com/rubin-dev/api/pkg/neoutils"
+	"gitlab.com/rubin-dev/api/pkg/neo4jstore"
 )
 
 type Billing struct {
@@ -16,6 +16,14 @@ type Billing struct {
 type BillingAddPacketResponse struct {
 	Errors  interface{}           `json:"errors"`
 	Billing *models.BillingPacket `json:"billing"`
+}
+
+type BillingHistoryListInput struct {
+	Page     int     `json:"page"`
+	PageSize int     `json:"pageSize"`
+	From     *string `json:"from"`
+	To       *string `json:"to"`
+	Last     *bool   `json:"last"`
 }
 
 type BillingHistoryListResponse struct {
@@ -30,11 +38,37 @@ type BillingKeyResponse struct {
 	Edge   []*models.BillingKey `json:"edge"`
 }
 
+type BillingStatisticsFilterInput struct {
+	Network string  `json:"network"`
+	From    *string `json:"from"`
+	To      *string `json:"to"`
+	Last    *bool   `json:"last"`
+}
+
+type BillingStatisticsResponse struct {
+	Errors interface{}                         `json:"errors"`
+	Stats  *models.BillingStatisticsBlockchain `json:"stats"`
+}
+
+type BillingStatisticsRiskRangeInput struct {
+	Network string  `json:"network"`
+	From    *string `json:"from"`
+	To      *string `json:"to"`
+	Last    *bool   `json:"last"`
+}
+
+type BillingStatisticsSummaryResponse struct {
+	Errors interface{}                 `json:"errors"`
+	Items  []*models.StatisticsSummary `json:"items"`
+}
+
 type CategoryCreateInput struct {
-	Name          string `json:"name"`
-	DescriptionRu string `json:"descriptionRu"`
-	DescriptionEn string `json:"descriptionEn"`
-	Risk          int    `json:"risk"`
+	Name            string `json:"name"`
+	Number          int    `json:"number"`
+	DescriptionRu   string `json:"descriptionRu"`
+	DescriptionEn   string `json:"descriptionEn"`
+	Risk            int    `json:"risk"`
+	CategoryGroupID *int   `json:"categoryGroupId"`
 }
 
 type CategoryCreateResponse struct {
@@ -44,7 +78,6 @@ type CategoryCreateResponse struct {
 
 type CategoryListResponse struct {
 	Errors interface{}        `json:"errors"`
-	Total  *int               `json:"total"`
 	Edge   []*models.Category `json:"edge"`
 }
 
@@ -53,10 +86,12 @@ type CategoryRemoveResponse struct {
 }
 
 type CategoryUpdateInput struct {
-	Name          *string `json:"name"`
-	DescriptionRu *string `json:"descriptionRu"`
-	DescriptionEn *string `json:"descriptionEn"`
-	Risk          *int    `json:"risk"`
+	Name            *string `json:"name"`
+	Number          *int    `json:"number"`
+	DescriptionRu   *string `json:"descriptionRu"`
+	DescriptionEn   *string `json:"descriptionEn"`
+	Risk            *int    `json:"risk"`
+	CategoryGroupID *int    `json:"categoryGroupId"`
 }
 
 type CategoryUpdateResponse struct {
@@ -75,6 +110,11 @@ type ChangePasswordResponse struct {
 	Errors interface{} `json:"errors"`
 }
 
+type FindAddressByHashNodeResponse struct {
+	Errors interface{}                       `json:"errors"`
+	Node   *neo4jstore.FindAddressByHashNode `json:"node"`
+}
+
 type LoginInput struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
@@ -91,14 +131,14 @@ type NodeCountResponse struct {
 }
 
 type NodeEntityResponse struct {
-	Errors interface{}    `json:"errors"`
-	Node   *neoutils.Node `json:"node"`
+	Errors interface{}      `json:"errors"`
+	Node   *neo4jstore.Node `json:"node"`
 }
 
 type NodeListResponse struct {
-	Errors interface{}      `json:"errors"`
-	Total  *int             `json:"total"`
-	Edge   []*neoutils.Node `json:"edge"`
+	Errors interface{}        `json:"errors"`
+	Total  *int               `json:"total"`
+	Edge   []*neo4jstore.Node `json:"edge"`
 }
 
 type PageInfo struct {
@@ -161,6 +201,17 @@ type RestoreResponse struct {
 	Errors interface{} `json:"errors"`
 }
 
+type RiskNodeEntityResponse struct {
+	Errors interface{}                `json:"errors"`
+	Node   *neo4jstore.Node           `json:"node"`
+	Risk   *neo4jstore.CalculatedRisk `json:"risk"`
+}
+
+type RiskResponse struct {
+	Errors interface{}      `json:"errors"`
+	Risk   *neo4jstore.Risk `json:"risk"`
+}
+
 type SearchCountResponse struct {
 	Errors interface{} `json:"errors"`
 	Count  *int        `json:"count"`
@@ -170,6 +221,12 @@ type SearchResponse struct {
 	Errors interface{}       `json:"errors"`
 	Total  *int              `json:"total"`
 	Edge   []*elastic.Entity `json:"edge"`
+}
+
+type StatisticsSummaryInput struct {
+	From *string `json:"from"`
+	To   *string `json:"to"`
+	Last *bool   `json:"last"`
 }
 
 type UserListResponse struct {

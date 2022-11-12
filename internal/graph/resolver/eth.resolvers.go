@@ -7,20 +7,21 @@ import (
 	"context"
 
 	"gitlab.com/rubin-dev/api/internal/graph/model"
+	"gitlab.com/rubin-dev/api/internal/tools"
 	"gitlab.com/rubin-dev/api/pkg/validator"
 )
 
-func (r *queryResolver) EthFindAddressByHash(ctx context.Context, address string) (*model.NodeEntityResponse, error) {
+func (r *queryResolver) EthFindAddressByHash(ctx context.Context, address string) (*model.FindAddressByHashNodeResponse, error) {
 	node, err := r.svc.EthFindAddressByHash(ctx, address)
 	if err != nil {
 		if errs, ok := err.(validator.Errors); ok {
-			return &model.NodeEntityResponse{Errors: errs}, nil
+			return &model.FindAddressByHashNodeResponse{Errors: errs}, nil
 		}
 
 		return nil, err
 	}
 
-	return &model.NodeEntityResponse{Node: node}, nil
+	return &model.FindAddressByHashNodeResponse{Node: node}, nil
 }
 
 func (r *queryResolver) EthFindTransactionsByAddress(ctx context.Context, hash string, page int, pageSize int) (*model.NodeListResponse, error) {
@@ -48,30 +49,36 @@ func (r *queryResolver) EthFindTransactionByHash(ctx context.Context, hash strin
 	return &model.NodeEntityResponse{Node: node}, nil
 }
 
-func (r *queryResolver) EthFindIncomingTransactionAddress(ctx context.Context, hash string) (*model.NodeEntityResponse, error) {
-	node, err := r.svc.EthFindIncomingTransactionAddress(ctx, hash)
+func (r *queryResolver) EthFindIncomingTransactionAddress(ctx context.Context, hash string, page int, pageSize int) (*model.NodeListResponse, error) {
+	nodes, total, err := r.svc.EthFindIncomingTransactions(ctx, hash, page, pageSize)
 	if err != nil {
 		if errs, ok := err.(validator.Errors); ok {
-			return &model.NodeEntityResponse{Errors: errs}, nil
+			return &model.NodeListResponse{Errors: errs}, nil
 		}
 
 		return nil, err
 	}
 
-	return &model.NodeEntityResponse{Node: node}, nil
+	return &model.NodeListResponse{
+		Total: &total,
+		Edge:  nodes,
+	}, nil
 }
 
-func (r *queryResolver) EthFindOutcomingTransactionAddress(ctx context.Context, hash string) (*model.NodeEntityResponse, error) {
-	node, err := r.svc.EthFindOutcomingTransactionAddress(ctx, hash)
+func (r *queryResolver) EthFindOutcomingTransactionAddress(ctx context.Context, hash string, page int, pageSize int) (*model.NodeListResponse, error) {
+	nodes, total, err := r.svc.EthFindOutcomingTransactions(ctx, hash, page, pageSize)
 	if err != nil {
 		if errs, ok := err.(validator.Errors); ok {
-			return &model.NodeEntityResponse{Errors: errs}, nil
+			return &model.NodeListResponse{Errors: errs}, nil
 		}
 
 		return nil, err
 	}
 
-	return &model.NodeEntityResponse{Node: node}, nil
+	return &model.NodeListResponse{
+		Total: &total,
+		Edge:  nodes,
+	}, nil
 }
 
 func (r *queryResolver) EthFindBlockByTransaction(ctx context.Context, hash string) (*model.NodeEntityResponse, error) {
@@ -87,7 +94,7 @@ func (r *queryResolver) EthFindBlockByTransaction(ctx context.Context, hash stri
 	return &model.NodeEntityResponse{Node: node}, nil
 }
 
-func (r *queryResolver) EthFindBlockByHeight(ctx context.Context, height string) (*model.NodeEntityResponse, error) {
+func (r *queryResolver) EthFindBlockByHeight(ctx context.Context, height int) (*model.NodeEntityResponse, error) {
 	node, err := r.svc.EthFindBlockByHeight(ctx, height)
 	if err != nil {
 		if errs, ok := err.(validator.Errors); ok {
@@ -100,20 +107,8 @@ func (r *queryResolver) EthFindBlockByHeight(ctx context.Context, height string)
 	return &model.NodeEntityResponse{Node: node}, nil
 }
 
-func (r *queryResolver) EthFindTransactionsInBlock(ctx context.Context, height string, page int, pageSize int) (*model.NodeListResponse, error) {
+func (r *queryResolver) EthFindTransactionsInBlock(ctx context.Context, height int, page int, pageSize int) (*model.NodeListResponse, error) {
 	nodes, total, err := r.svc.EthFindTransactionsInBlock(ctx, height, page, pageSize)
-	if err != nil {
-		return nil, err
-	}
-
-	return &model.NodeListResponse{
-		Total: &total,
-		Edge:  nodes,
-	}, nil
-}
-
-func (r *queryResolver) EthFindAllInputAndOutputTransactions(ctx context.Context, hash string, page int, pageSize int) (*model.NodeListResponse, error) {
-	nodes, total, err := r.svc.EthFindAllInputAndOutputTransactions(ctx, hash, page, pageSize)
 	if err != nil {
 		return nil, err
 	}
@@ -138,7 +133,7 @@ func (r *queryResolver) EthFindBlockByHash(ctx context.Context, hash string) (*m
 }
 
 func (r *queryResolver) EthFindMentionsByAddress(ctx context.Context, address string, page int, pageSize int) (*model.NodeListResponse, error) {
-	nodes, total, err := r.svc.EthFindMentionsByAddress(ctx, address, page, pageSize)
+	nodes, total, err := r.svc.EthFindMentionsForAddress(ctx, address, page, pageSize)
 	if err != nil {
 		return nil, err
 	}
@@ -162,15 +157,30 @@ func (r *queryResolver) EthFindContactByAddress(ctx context.Context, address str
 	return &model.NodeEntityResponse{Node: node}, nil
 }
 
-func (r *queryResolver) EthFindRiskScoreByAddress(ctx context.Context, address string) (*model.NodeEntityResponse, error) {
-	node, err := r.svc.EthFindRiskScoreByAddress(ctx, address)
+func (r *queryResolver) EthRisk(ctx context.Context, address string) (*model.RiskResponse, error) {
+	risk, err := r.svc.EthRisk(ctx, address)
 	if err != nil {
 		if errs, ok := err.(validator.Errors); ok {
-			return &model.NodeEntityResponse{Errors: errs}, nil
+			return &model.RiskResponse{Errors: errs}, nil
 		}
 
 		return nil, err
 	}
 
-	return &model.NodeEntityResponse{Node: node}, nil
+	return &model.RiskResponse{Risk: risk}, nil
+}
+
+func (r *queryResolver) EthSearch(ctx context.Context, query string, page int, limit int, wildcard *bool) (*model.SearchResponse, error) {
+	if wildcard == nil {
+		wildcard = tools.Ptr[bool](true)
+	}
+	items, total, err := r.svc.Search(ctx, query, page, limit, *wildcard)
+	if err != nil {
+		if errs, ok := err.(validator.Errors); ok {
+			return &model.SearchResponse{Errors: errs}, nil
+		}
+		return nil, err
+	}
+
+	return &model.SearchResponse{Edge: items, Total: &total}, nil
 }

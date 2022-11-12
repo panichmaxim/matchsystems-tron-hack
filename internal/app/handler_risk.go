@@ -1,12 +1,13 @@
 package app
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/rs/zerolog/log"
-	"github.com/spf13/cast"
-	"gitlab.com/rubin-dev/api/pkg/neoutils"
+	"gitlab.com/rubin-dev/api/pkg/neo4jstore"
 	"gitlab.com/rubin-dev/api/pkg/store"
 	"gitlab.com/rubin-dev/api/pkg/validator"
 	"net/http"
@@ -17,14 +18,14 @@ const HeaderContentTypeKey = "Content-Type"
 const HeaderContentTypeValue = "application/json"
 
 type CheckResponse struct {
-	Detail     string `json:"detail"`
-	Address    string `json:"address"`
-	Blockchain string `json:"blockchain"`
-	Risk       int    `json:"risk,omitempty"`
-	Category   string `json:"category"`
-	Status     string `json:"status"`
-	First      string `json:"first"`
-	Last       string `json:"last"`
+	Detail     string           `json:"detail"`
+	Address    string           `json:"address"`
+	Blockchain string           `json:"blockchain"`
+	Risk       *neo4jstore.Risk `json:"risk,omitempty"`
+	Category   string           `json:"category"`
+	Status     string           `json:"status"`
+	First      string           `json:"first"`
+	Last       string           `json:"last"`
 }
 
 type RiskResponse struct {
@@ -35,6 +36,20 @@ type ErrorResponse struct {
 	Error string `json:"error"`
 }
 
+func (app *App) getRisk(ctx context.Context, network, address string) (*neo4jstore.Risk, error) {
+	switch network {
+	case "btc":
+		return app.svc.BtcRisk(ctx, address)
+
+	case "eth":
+		return app.svc.EthRisk(ctx, address)
+
+	case "tron":
+		return app.svc.TronRisk(ctx, address)
+	}
+
+	return nil, fmt.Errorf("unknown network")
+}
 
 func (app *App) riskHandler(w http.ResponseWriter, r *http.Request) {
 	apiKey := r.Header.Get(ApiKeyHeaderKey)
@@ -78,28 +93,13 @@ func (app *App) riskHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var node *neoutils.Node
-	var nodeErr error
-	switch network {
-	case "btc":
-		node, nodeErr = app.svc.BtcFindRiskScore(r.Context(), address)
-		break
-	case "eth":
-		node, nodeErr = app.svc.EthFindRiskScoreByAddress(r.Context(), address)
-		break
-	default:
-		w.Header().Set(HeaderContentTypeKey, HeaderContentTypeValue)
-		w.WriteHeader(http.StatusUnauthorized)
-		_ = json.NewEncoder(w).Encode(&ErrorResponse{Error: "unknown network"})
-		return
-	}
-
-	if nodeErr != nil {
-		log.Err(nodeErr).Msg("nodeErr")
+	risk, err := app.getRisk(r.Context(), network, address)
+	if err != nil {
+		log.Err(err).Msg("riskErr")
 		w.Header().Set(HeaderContentTypeKey, HeaderContentTypeValue)
 		w.WriteHeader(http.StatusInternalServerError)
 
-		if errs, ok := nodeErr.(validator.Errors); ok {
+		if errs, ok := err.(validator.Errors); ok {
 			_ = json.NewEncoder(w).Encode(&errs)
 			return
 		}
@@ -108,18 +108,8 @@ func (app *App) riskHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var risk int
-	var category string
-
-	if node != nil {
-		if v, ok := node.Props["score"]; ok {
-			risk = cast.ToInt(v)
-		}
-		if v, ok := node.Props["category"]; ok {
-			category = cast.ToString(v)
-		}
-
-		if _, err := app.svc.BillingRegisterRequest(r.Context(), key.UserID, address, risk, category, network); err != nil {
+	if risk != nil {
+		if _, err := app.svc.BillingRegisterRequest(r.Context(), key.UserID, address, risk, network); err != nil {
 			log.Err(err).Msg("app.svc.BillingRegisterRequest")
 			w.Header().Set(HeaderContentTypeKey, HeaderContentTypeValue)
 
@@ -140,7 +130,6 @@ func (app *App) riskHandler(w http.ResponseWriter, r *http.Request) {
 		Address:    address,
 		Blockchain: network,
 		Risk:       risk,
-		Category:   category,
 	}
 
 	if err := json.NewEncoder(w).Encode(&RiskResponse{CheckResponse: resp}); err != nil {

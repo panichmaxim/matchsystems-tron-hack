@@ -19,6 +19,6 @@ type SearchCountResponse {
 }
 
 extend type Query {
-    search(query: String!, page: Int! = 0, limit: Int! = 100): SearchResponse! @auth(permissions: ["subscription"])
-    searchCount(query: String!): SearchCountResponse!
+    search(query: String!, page: Int! = 0, limit: Int! = 100, wildcard: Boolean!): SearchResponse! @auth(permissions: ["subscription.fulltext"])
+    searchCount(query: String!, wildcard: Boolean!): SearchCountResponse!
 }

@@ -10,7 +10,7 @@ import (
 
 var _ Store = (*storeImpl)(nil)
 
-func NewSQLStore(db *bun.DB) *storeImpl {
+func NewSQLStore(db *bun.DB) Store {
 	return &storeImpl{db}
 }
 

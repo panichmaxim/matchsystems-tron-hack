@@ -7,7 +7,7 @@ import (
 type Validation interface {
 	UserValidation
 	ElasticValidation
-	NeoValidation
+	BtcNeoValidation
 }
 
 func NewValidation(store store.Store) Validation {

@@ -1,0 +1,40 @@
+- model: BillingRequest
+  rows:
+    - _id: req1
+      user_id: 1
+      query: "test1"
+      network: "btc"
+      is_reported: true
+      created_at: "{{ now }}"
+      last: true
+    - _id: req2
+      user_id: 1
+      query: "test1"
+      network: "btc"
+      is_reported: true
+      created_at: "{{ now }}"
+      last: true
+    - _id: req3
+      user_id: 1
+      query: "test1"
+      network: "btc"
+      is_reported: true
+      created_at: "{{ now }}"
+      last: true
+- model: BillingRisk
+  rows:
+    - billing_request_id: '{{ $.BillingRequest.req1.ID }}'
+      risk: 1
+      is_reported: true
+      category_id: 39
+      created_at: "{{ now }}"
+    - billing_request_id: '{{ $.BillingRequest.req2.ID }}'
+      risk: 2
+      is_reported: true
+      category_id: 39
+      created_at: "{{ now }}"
+    - billing_request_id: '{{ $.BillingRequest.req3.ID }}'
+      risk: 3
+      is_reported: true
+      category_id: 58
+      created_at: "{{ now }}"

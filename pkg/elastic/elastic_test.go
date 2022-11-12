@@ -5,5 +5,5 @@ import "context"
 var ctx = context.TODO()
 
 var testElasticHosts = []string{
-	"http://51.250.18.11:9200",
+	"http://158.160.2.191:9200",
 }

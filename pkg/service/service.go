@@ -10,9 +10,10 @@ type Service interface {
 	AccessRequestService
 	ElasticService
 	BillingService
+	CategoryService
 	BtcNeoService
 	EthNeoService
-	CategoryService
+	TronNeoService
 
 	Health(ctx context.Context) error
 	Close(ctx context.Context) error

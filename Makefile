@@ -11,7 +11,7 @@ else
 endif
 
 CI_COMMIT_SHORT_SHA ?= $(shell git rev-parse --short HEAD)
-CGO_ENABLED = 0
+CGO_ENABLED = 1
 GOARCH = amd64
 LDFLAGS = -ldflags "-X main.shaCommit=${CI_COMMIT_SHORT_SHA}"
 GO = $(shell which go)
@@ -48,8 +48,16 @@ create-migration:
 ################################################### build
 
 .PHONY: generate
-generate:
+generate: generate-otlp generate-graphql
+
+.PHONY: generate-graphql
+generate-graphql:
 	$(GO) generate ./...
+
+.PHONY: generate-otlp
+generate-otlp:
+	gowrap gen -p ./pkg/service -i Service -t ./resources/opentelemetry -o ./pkg/service/otlp.go
+	gowrap gen -p ./pkg/validator -i Validation -t ./resources/opentelemetry -o ./pkg/validator/otlp.go
 
 ################################################### email templates
 

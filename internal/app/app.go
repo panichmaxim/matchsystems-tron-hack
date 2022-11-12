@@ -1,12 +1,13 @@
 package app
 
 import (
+	"context"
 	"github.com/pkg/errors"
-	"gitlab.com/rubin-dev/api/pkg/btcstore"
 	"gitlab.com/rubin-dev/api/pkg/elastic"
-	"gitlab.com/rubin-dev/api/pkg/ethstore"
-	"gitlab.com/rubin-dev/api/pkg/neoutils"
-	"gitlab.com/rubin-dev/api/pkg/service/otlp"
+	"gitlab.com/rubin-dev/api/pkg/neo4jstore"
+	"gitlab.com/rubin-dev/api/pkg/neo4jstore/btc"
+	"gitlab.com/rubin-dev/api/pkg/neo4jstore/eth"
+	"gitlab.com/rubin-dev/api/pkg/neo4jstore/tron"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -21,6 +22,7 @@ import (
 )
 
 func NewApp(
+	ctx context.Context,
 	sharedConfig *cfg.DistributedConfig,
 	sqlImpl store.Store,
 ) (*App, error) {
@@ -34,12 +36,17 @@ func NewApp(
 		return nil, errors.Wrap(err, "elastic.NewElastic")
 	}
 
-	btcNeoClient, err := neoutils.CreateDriver(sharedConfig.BtcNeo.Address, sharedConfig.BtcNeo.Username, sharedConfig.BtcNeo.Password)
+	btcNeoClient, err := neo4jstore.CreateDriver(ctx, sharedConfig.BtcNeo.Address, sharedConfig.BtcNeo.Username, sharedConfig.BtcNeo.Password)
 	if err != nil {
 		return nil, errors.Wrap(err, "neoutils.CreateDriver")
 	}
 
-	ethNeoClient, err := neoutils.CreateDriver(sharedConfig.EthNeo.Address, sharedConfig.EthNeo.Username, sharedConfig.EthNeo.Password)
+	ethNeoClient, err := neo4jstore.CreateDriver(ctx, sharedConfig.EthNeo.Address, sharedConfig.EthNeo.Username, sharedConfig.EthNeo.Password)
+	if err != nil {
+		return nil, errors.Wrap(err, "neoutils.CreateDriver")
+	}
+
+	tronNeoClient, err := neo4jstore.CreateDriver(ctx, sharedConfig.TronNeo.Address, sharedConfig.TronNeo.Username, sharedConfig.TronNeo.Password)
 	if err != nil {
 		return nil, errors.Wrap(err, "neoutils.CreateDriver")
 	}
@@ -58,9 +65,10 @@ func NewApp(
 		log.Fatal().Err(err).Msg("jwt error")
 	}
 
-	btcneo := btcstore.NewStore(neoutils.CreateSession(btcNeoClient))
-	ethneo := ethstore.NewStore(neoutils.CreateSession(ethNeoClient))
-	svc := otlp.NewOTLPService(
+	btcneo := btc.NewStore(neo4jstore.CreateSession(btcNeoClient), sqlImpl)
+	ethneo := eth.NewStore(neo4jstore.CreateSession(ethNeoClient), sqlImpl)
+	tronneo := tron.NewStore(neo4jstore.CreateSession(tronNeoClient), sqlImpl)
+	svc := service.NewServiceWithTracing(
 		service.NewService(
 			sqlImpl,
 			jwtsvc,
@@ -68,9 +76,10 @@ func NewApp(
 			mailer.NewNotify(mailGate),
 			btcneo,
 			ethneo,
+			tronneo,
 			sharedConfig.App.Dev,
 		),
-		app.tracer,
+		"service",
 	)
 	if err != nil {
 		return nil, errors.Wrap(err, "otlp.NewOTLPService")

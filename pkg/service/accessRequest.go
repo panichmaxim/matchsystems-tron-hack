@@ -4,11 +4,13 @@ import (
 	"context"
 	"github.com/rs/zerolog/log"
 	"gitlab.com/rubin-dev/api/pkg/models"
+	"sync"
 )
 
 var _ AccessRequestService = (*serviceImpl)(nil)
 
-const accessRequestAdminUser = "panichmax@gmail.com"
+const accessRequestAdmin1User = "panichmax@gmail.com"
+const accessRequestAdmin2User = "maxfalaleev1@gmail.com"
 
 type AccessRequestService interface {
 	AccessRequest(ctx context.Context, user *models.User) error
@@ -19,11 +21,23 @@ func (s *serviceImpl) AccessRequest(ctx context.Context, user *models.User) erro
 		return err
 	}
 
+	var wg sync.WaitGroup
+	wg.Add(2)
 	go func() {
-		if err := s.mail.AccessRequest(ctx, accessRequestAdminUser, user.Name, user.Email); err != nil {
+		defer wg.Done()
+		if err := s.mail.AccessRequest(ctx, accessRequestAdmin1User, user.Name, user.Email); err != nil {
 			log.Err(err).Msg("mail.AccessRequest")
 		}
 	}()
+
+	go func() {
+		defer wg.Done()
+		if err := s.mail.AccessRequest(ctx, accessRequestAdmin2User, user.Name, user.Email); err != nil {
+			log.Err(err).Msg("mail.AccessRequest")
+		}
+	}()
+
+	wg.Wait()
 
 	return nil
 }

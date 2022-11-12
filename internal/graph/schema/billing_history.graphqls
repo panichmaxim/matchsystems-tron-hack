@@ -2,8 +2,11 @@ type BillingRequest {
     id: ID!
     userId: ID!
     query: String!
-    risk: Int!
-    category: String!
+    risk: Float!
+    isCalculated: Boolean!
+    isReported: Boolean!
+    isWallet: Boolean!
+    categories: [BillingRisk!]!
     network: String!
     createdAt: DateTime!
 }
@@ -15,14 +18,90 @@ type BillingPacket {
     createdAt: DateTime!
 }
 
+type BillingStatisticsCategory {
+    number: Int!
+    name: String!
+    risk: Float!
+}
+
+type BillingStatisticsBlockchain {
+    total: Int64!
+    categories: [BillingStatisticsCategory!]!
+}
+
+type BillingRisk {
+    id: Int64!
+    risk: Float!
+    riskRaw: Float!
+    percent: Float!
+    percentRaw: Float!
+    isCalculated: Boolean!
+    isReported: Boolean!
+    isWallet: Boolean!
+    total: Float!
+    directory: CategoryGroup!
+    category: Category
+}
+
+type BillingStatisticsRisk {
+    name: String!
+    total: Int64!
+}
+
 type BillingHistoryListResponse {
     errors: Any
     total: Int
     edge: [BillingRequest!]!
 }
 
+type BillingStatisticsResponse {
+    errors: Any
+    stats: BillingStatisticsBlockchain!
+}
+
+input BillingStatisticsFilterInput {
+    network: String!
+    from: Date
+    to: Date
+    last: Boolean
+}
+
+input BillingStatisticsRiskRangeInput {
+    network: String!
+    from: Date
+    to: Date
+    last: Boolean
+}
+
+input StatisticsSummaryInput {
+    from: Date
+    to: Date
+    last: Boolean
+}
+
+type StatisticsSummary {
+    network: String!
+    total: Int!
+}
+
+type BillingStatisticsSummaryResponse {
+    errors: Any
+    items: [StatisticsSummary!]!
+}
+
+input BillingHistoryListInput {
+    page: Int!
+    pageSize: Int!
+    from: Date
+    to: Date
+    last: Boolean
+}
+
 extend type Query {
-    billingHistoryList(page: Int!, pageSize: Int!): BillingHistoryListResponse! @auth
+    billingHistoryList(filter: BillingHistoryListInput!): BillingHistoryListResponse! @auth
+    billingStatistics(filter: BillingStatisticsFilterInput!): BillingStatisticsResponse! @auth
+    billingStatisticsSummary(filter: StatisticsSummaryInput!): BillingStatisticsSummaryResponse! @auth
+    billingStatisticsRiskRange(filter: BillingStatisticsRiskRangeInput!): [Int!]! @auth
 }
 
 extend type Mutation {

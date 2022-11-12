@@ -8,6 +8,7 @@ func GetModels() []interface{} {
 		(*Billing)(nil),
 		(*BillingPacket)(nil),
 		(*BillingRequest)(nil),
+		(*BillingRisk)(nil),
 		(*BillingKey)(nil),
 		(*Category)(nil),
 	}

@@ -7,36 +7,9 @@ import (
 	"context"
 
 	"gitlab.com/rubin-dev/api/internal/graph/model"
+	"gitlab.com/rubin-dev/api/internal/tools"
 	"gitlab.com/rubin-dev/api/pkg/validator"
 )
-
-func (r *queryResolver) BtcExistsAddressByHashCount(ctx context.Context, address string) (*model.NodeCountResponse, error) {
-	node, err := r.svc.BtcFindAddressByHash(ctx, address)
-	if err != nil {
-		if errs, ok := err.(validator.Errors); ok {
-			return &model.NodeCountResponse{Errors: errs}, nil
-		}
-
-		return nil, err
-	}
-
-	has := node != nil
-	return &model.NodeCountResponse{Has: &has}, nil
-}
-
-func (r *queryResolver) BtcExistsTransactionByHashCount(ctx context.Context, address string) (*model.NodeCountResponse, error) {
-	node, err := r.svc.BtcFindTransactionByHash(ctx, address)
-	if err != nil {
-		if errs, ok := err.(validator.Errors); ok {
-			return &model.NodeCountResponse{Errors: errs}, nil
-		}
-
-		return nil, err
-	}
-
-	has := node != nil
-	return &model.NodeCountResponse{Has: &has}, nil
-}
 
 func (r *queryResolver) BtcFindContactByAddress(ctx context.Context, address string) (*model.NodeEntityResponse, error) {
 	node, err := r.svc.BtcFindContactByAddress(ctx, address)
@@ -64,17 +37,17 @@ func (r *queryResolver) BtcFindTransactionByHash(ctx context.Context, address st
 	return &model.NodeEntityResponse{Node: node}, nil
 }
 
-func (r *queryResolver) BtcFindAddressByHash(ctx context.Context, address string) (*model.NodeEntityResponse, error) {
+func (r *queryResolver) BtcFindAddressByHash(ctx context.Context, address string) (*model.FindAddressByHashNodeResponse, error) {
 	node, err := r.svc.BtcFindAddressByHash(ctx, address)
 	if err != nil {
 		if errs, ok := err.(validator.Errors); ok {
-			return &model.NodeEntityResponse{Errors: errs}, nil
+			return &model.FindAddressByHashNodeResponse{Errors: errs}, nil
 		}
 
 		return nil, err
 	}
 
-	return &model.NodeEntityResponse{Node: node}, nil
+	return &model.FindAddressByHashNodeResponse{Node: node}, nil
 }
 
 func (r *queryResolver) BtcFindWalletForAddress(ctx context.Context, address string) (*model.NodeEntityResponse, error) {
@@ -90,21 +63,21 @@ func (r *queryResolver) BtcFindWalletForAddress(ctx context.Context, address str
 	return &model.NodeEntityResponse{Node: node}, nil
 }
 
-func (r *queryResolver) BtcFindRiskScore(ctx context.Context, address string) (*model.NodeEntityResponse, error) {
-	node, err := r.svc.BtcFindRiskScore(ctx, address)
+func (r *queryResolver) BtcRisk(ctx context.Context, address string) (*model.RiskResponse, error) {
+	risk, err := r.svc.BtcRisk(ctx, address)
 	if err != nil {
 		if errs, ok := err.(validator.Errors); ok {
-			return &model.NodeEntityResponse{Errors: errs}, nil
+			return &model.RiskResponse{Errors: errs}, nil
 		}
 
 		return nil, err
 	}
 
-	return &model.NodeEntityResponse{Node: node}, nil
+	return &model.RiskResponse{Risk: risk}, nil
 }
 
 func (r *queryResolver) BtcFindBlockByNumber(ctx context.Context, height int) (*model.NodeEntityResponse, error) {
-	node, err := r.svc.BtcFindBlockByNumber(ctx, height)
+	node, err := r.svc.BtcFindBlockByHeight(ctx, height)
 	if err != nil {
 		if errs, ok := err.(validator.Errors); ok {
 			return &model.NodeEntityResponse{Errors: errs}, nil
@@ -202,18 +175,6 @@ func (r *queryResolver) BtcFindTransactionsInBlock(ctx context.Context, height i
 	}, nil
 }
 
-func (r *queryResolver) BtcFindAllInputAndOutputByTransaction(ctx context.Context, txid string, page int, pageSize int) (*model.NodeListResponse, error) {
-	nodes, total, err := r.svc.BtcFindAllInputAndOutputByTransaction(ctx, txid, page, pageSize)
-	if err != nil {
-		return nil, err
-	}
-
-	return &model.NodeListResponse{
-		Total: &total,
-		Edge:  nodes,
-	}, nil
-}
-
 func (r *queryResolver) BtcFindTransactionsInBlockByHash(ctx context.Context, hash string, page int, pageSize int) (*model.NodeListResponse, error) {
 	nodes, total, err := r.svc.BtcFindTransactionsInBlockByHash(ctx, hash, page, pageSize)
 	if err != nil {
@@ -249,4 +210,19 @@ func (r *queryResolver) BtcFindWalletAddresses(ctx context.Context, wid string, 
 		Total: &total,
 		Edge:  nodes,
 	}, nil
+}
+
+func (r *queryResolver) BtcSearch(ctx context.Context, query string, page int, limit int, wildcard *bool) (*model.SearchResponse, error) {
+	if wildcard == nil {
+		wildcard = tools.Ptr[bool](true)
+	}
+	items, total, err := r.svc.Search(ctx, query, page, limit, *wildcard)
+	if err != nil {
+		if errs, ok := err.(validator.Errors); ok {
+			return &model.SearchResponse{Errors: errs}, nil
+		}
+		return nil, err
+	}
+
+	return &model.SearchResponse{Edge: items, Total: &total}, nil
 }

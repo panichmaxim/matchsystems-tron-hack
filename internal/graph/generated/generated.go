@@ -19,7 +19,7 @@ import (
 	"gitlab.com/rubin-dev/api/internal/graph/model"
 	"gitlab.com/rubin-dev/api/pkg/elastic"
 	"gitlab.com/rubin-dev/api/pkg/models"
-	"gitlab.com/rubin-dev/api/pkg/neoutils"
+	"gitlab.com/rubin-dev/api/pkg/neo4jstore"
 )
 
 // region    ************************** generated!.gotpl **************************
@@ -43,9 +43,15 @@ type ResolverRoot interface {
 	BillingKey() BillingKeyResolver
 	BillingPacket() BillingPacketResolver
 	BillingRequest() BillingRequestResolver
+	BillingRisk() BillingRiskResolver
+	BillingStatisticsBlockchain() BillingStatisticsBlockchainResolver
+	BillingStatisticsCategory() BillingStatisticsCategoryResolver
+	CalculatedRisk() CalculatedRiskResolver
+	Category() CategoryResolver
 	Mutation() MutationResolver
 	Node() NodeResolver
 	Query() QueryResolver
+	RiskData() RiskDataResolver
 	Subscription() SubscriptionResolver
 	User() UserResolver
 }
@@ -94,20 +100,81 @@ type ComplexityRoot struct {
 	}
 
 	BillingRequest struct {
-		Category  func(childComplexity int) int
-		CreatedAt func(childComplexity int) int
-		ID        func(childComplexity int) int
-		Network   func(childComplexity int) int
-		Query     func(childComplexity int) int
-		Risk      func(childComplexity int) int
-		UserID    func(childComplexity int) int
+		Categories   func(childComplexity int) int
+		CreatedAt    func(childComplexity int) int
+		ID           func(childComplexity int) int
+		IsCalculated func(childComplexity int) int
+		IsReported   func(childComplexity int) int
+		IsWallet     func(childComplexity int) int
+		Network      func(childComplexity int) int
+		Query        func(childComplexity int) int
+		Risk         func(childComplexity int) int
+		UserID       func(childComplexity int) int
+	}
+
+	BillingRisk struct {
+		Category     func(childComplexity int) int
+		Directory    func(childComplexity int) int
+		ID           func(childComplexity int) int
+		IsCalculated func(childComplexity int) int
+		IsReported   func(childComplexity int) int
+		IsWallet     func(childComplexity int) int
+		Percent      func(childComplexity int) int
+		PercentRaw   func(childComplexity int) int
+		Risk         func(childComplexity int) int
+		RiskRaw      func(childComplexity int) int
+		Total        func(childComplexity int) int
+	}
+
+	BillingStatisticsBlockchain struct {
+		Categories func(childComplexity int) int
+		Total      func(childComplexity int) int
+	}
+
+	BillingStatisticsCategory struct {
+		Name   func(childComplexity int) int
+		Number func(childComplexity int) int
+		Risk   func(childComplexity int) int
+	}
+
+	BillingStatisticsResponse struct {
+		Errors func(childComplexity int) int
+		Stats  func(childComplexity int) int
+	}
+
+	BillingStatisticsRisk struct {
+		Name  func(childComplexity int) int
+		Total func(childComplexity int) int
+	}
+
+	BillingStatisticsSummaryResponse struct {
+		Errors func(childComplexity int) int
+		Items  func(childComplexity int) int
+	}
+
+	CalculateItem struct {
+		I18n       func(childComplexity int) int
+		ID         func(childComplexity int) int
+		Percent    func(childComplexity int) int
+		PercentRaw func(childComplexity int) int
+		Risk       func(childComplexity int) int
+		RiskRaw    func(childComplexity int) int
+		Total      func(childComplexity int) int
+	}
+
+	CalculatedRisk struct {
+		Items func(childComplexity int) int
+		Risk  func(childComplexity int) int
+		Total func(childComplexity int) int
 	}
 
 	Category struct {
+		CategoryGroup func(childComplexity int) int
 		DescriptionEn func(childComplexity int) int
 		DescriptionRu func(childComplexity int) int
 		ID            func(childComplexity int) int
 		Name          func(childComplexity int) int
+		Number        func(childComplexity int) int
 		Risk          func(childComplexity int) int
 	}
 
@@ -116,10 +183,15 @@ type ComplexityRoot struct {
 		Errors   func(childComplexity int) int
 	}
 
+	CategoryGroup struct {
+		ID     func(childComplexity int) int
+		NameEn func(childComplexity int) int
+		NameRu func(childComplexity int) int
+	}
+
 	CategoryListResponse struct {
 		Edge   func(childComplexity int) int
 		Errors func(childComplexity int) int
-		Total  func(childComplexity int) int
 	}
 
 	CategoryRemoveResponse struct {
@@ -136,6 +208,11 @@ type ComplexityRoot struct {
 		Jwt    func(childComplexity int) int
 	}
 
+	DirectoryI18n struct {
+		En func(childComplexity int) int
+		Ru func(childComplexity int) int
+	}
+
 	Entity struct {
 		Address  func(childComplexity int) int
 		Category func(childComplexity int) int
@@ -143,6 +220,16 @@ type ComplexityRoot struct {
 		Contact  func(childComplexity int) int
 		Data     func(childComplexity int) int
 		Date     func(childComplexity int) int
+	}
+
+	FindAddressByHashNode struct {
+		Address func(childComplexity int) int
+		Total   func(childComplexity int) int
+	}
+
+	FindAddressByHashNodeResponse struct {
+		Errors func(childComplexity int) int
+		Node   func(childComplexity int) int
 	}
 
 	Jwt struct {
@@ -205,48 +292,63 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		BillingHistoryList                    func(childComplexity int, page int, pageSize int) int
-		BillingKeyList                        func(childComplexity int, page int, pageSize int) int
-		BtcExistsAddressByHashCount           func(childComplexity int, address string) int
-		BtcExistsTransactionByHashCount       func(childComplexity int, address string) int
-		BtcFindAddressByHash                  func(childComplexity int, address string) int
-		BtcFindAllInputAndOutputByTransaction func(childComplexity int, txid string, page int, pageSize int) int
-		BtcFindBlockByHash                    func(childComplexity int, hash string) int
-		BtcFindBlockByNumber                  func(childComplexity int, height int) int
-		BtcFindBlockByTransaction             func(childComplexity int, txid string) int
-		BtcFindContactByAddress               func(childComplexity int, address string) int
-		BtcFindIncomingTransactions           func(childComplexity int, txid string, page int, pageSize int) int
-		BtcFindMentionsForAddress             func(childComplexity int, address string, page int, pageSize int) int
-		BtcFindOutcomingTransactions          func(childComplexity int, txid string, page int, pageSize int) int
-		BtcFindRiskScore                      func(childComplexity int, address string) int
-		BtcFindTransactionByHash              func(childComplexity int, address string) int
-		BtcFindTransactionsByAddress          func(childComplexity int, address string, page int, pageSize int) int
-		BtcFindTransactionsInBlock            func(childComplexity int, height int, page int, pageSize int) int
-		BtcFindTransactionsInBlockByHash      func(childComplexity int, hash string, page int, pageSize int) int
-		BtcFindWalletAddresses                func(childComplexity int, wid string, page int, pageSize int) int
-		BtcFindWalletByWid                    func(childComplexity int, wid string) int
-		BtcFindWalletForAddress               func(childComplexity int, address string) int
-		CategoryFindByID                      func(childComplexity int, id int64) int
-		CategoryList                          func(childComplexity int) int
-		EthFindAddressByHash                  func(childComplexity int, address string) int
-		EthFindAllInputAndOutputTransactions  func(childComplexity int, hash string, page int, pageSize int) int
-		EthFindBlockByHash                    func(childComplexity int, hash string) int
-		EthFindBlockByHeight                  func(childComplexity int, height string) int
-		EthFindBlockByTransaction             func(childComplexity int, hash string) int
-		EthFindContactByAddress               func(childComplexity int, address string) int
-		EthFindIncomingTransactionAddress     func(childComplexity int, hash string) int
-		EthFindMentionsByAddress              func(childComplexity int, address string, page int, pageSize int) int
-		EthFindOutcomingTransactionAddress    func(childComplexity int, hash string) int
-		EthFindRiskScoreByAddress             func(childComplexity int, address string) int
-		EthFindTransactionByHash              func(childComplexity int, hash string) int
-		EthFindTransactionsByAddress          func(childComplexity int, hash string, page int, pageSize int) int
-		EthFindTransactionsInBlock            func(childComplexity int, height string, page int, pageSize int) int
-		Health                                func(childComplexity int) int
-		Me                                    func(childComplexity int) int
-		Search                                func(childComplexity int, query string, page int, limit int) int
-		SearchCount                           func(childComplexity int, query string) int
-		User                                  func(childComplexity int, id int64) int
-		UserList                              func(childComplexity int, page int, pageSize int) int
+		BillingHistoryList                  func(childComplexity int, filter model.BillingHistoryListInput) int
+		BillingKeyList                      func(childComplexity int, page int, pageSize int) int
+		BillingStatistics                   func(childComplexity int, filter model.BillingStatisticsFilterInput) int
+		BillingStatisticsRiskRange          func(childComplexity int, filter model.BillingStatisticsRiskRangeInput) int
+		BillingStatisticsSummary            func(childComplexity int, filter model.StatisticsSummaryInput) int
+		BtcFindAddressByHash                func(childComplexity int, address string) int
+		BtcFindBlockByHash                  func(childComplexity int, hash string) int
+		BtcFindBlockByNumber                func(childComplexity int, height int) int
+		BtcFindBlockByTransaction           func(childComplexity int, txid string) int
+		BtcFindContactByAddress             func(childComplexity int, address string) int
+		BtcFindIncomingTransactions         func(childComplexity int, txid string, page int, pageSize int) int
+		BtcFindMentionsForAddress           func(childComplexity int, address string, page int, pageSize int) int
+		BtcFindOutcomingTransactions        func(childComplexity int, txid string, page int, pageSize int) int
+		BtcFindTransactionByHash            func(childComplexity int, address string) int
+		BtcFindTransactionsByAddress        func(childComplexity int, address string, page int, pageSize int) int
+		BtcFindTransactionsInBlock          func(childComplexity int, height int, page int, pageSize int) int
+		BtcFindTransactionsInBlockByHash    func(childComplexity int, hash string, page int, pageSize int) int
+		BtcFindWalletAddresses              func(childComplexity int, wid string, page int, pageSize int) int
+		BtcFindWalletByWid                  func(childComplexity int, wid string) int
+		BtcFindWalletForAddress             func(childComplexity int, address string) int
+		BtcRisk                             func(childComplexity int, address string) int
+		BtcSearch                           func(childComplexity int, query string, page int, limit int, wildcard *bool) int
+		CategoryAllList                     func(childComplexity int) int
+		CategoryFindByID                    func(childComplexity int, id int64) int
+		CategoryList                        func(childComplexity int, id *int64) int
+		EthFindAddressByHash                func(childComplexity int, address string) int
+		EthFindBlockByHash                  func(childComplexity int, hash string) int
+		EthFindBlockByHeight                func(childComplexity int, height int) int
+		EthFindBlockByTransaction           func(childComplexity int, hash string) int
+		EthFindContactByAddress             func(childComplexity int, address string) int
+		EthFindIncomingTransactionAddress   func(childComplexity int, hash string, page int, pageSize int) int
+		EthFindMentionsByAddress            func(childComplexity int, address string, page int, pageSize int) int
+		EthFindOutcomingTransactionAddress  func(childComplexity int, hash string, page int, pageSize int) int
+		EthFindTransactionByHash            func(childComplexity int, hash string) int
+		EthFindTransactionsByAddress        func(childComplexity int, hash string, page int, pageSize int) int
+		EthFindTransactionsInBlock          func(childComplexity int, height int, page int, pageSize int) int
+		EthRisk                             func(childComplexity int, address string) int
+		EthSearch                           func(childComplexity int, query string, page int, limit int, wildcard *bool) int
+		Health                              func(childComplexity int) int
+		Me                                  func(childComplexity int) int
+		Search                              func(childComplexity int, query string, page int, limit int, wildcard bool) int
+		SearchCount                         func(childComplexity int, query string, wildcard bool) int
+		TronFindAddressByHash               func(childComplexity int, address string) int
+		TronFindBlockByHash                 func(childComplexity int, hash string) int
+		TronFindBlockByHeight               func(childComplexity int, height int) int
+		TronFindBlockByTransaction          func(childComplexity int, hash string) int
+		TronFindContactByAddress            func(childComplexity int, address string) int
+		TronFindIncomingTransactionAddress  func(childComplexity int, hash string, page int, pageSize int) int
+		TronFindMentionsByAddress           func(childComplexity int, address string, page int, pageSize int) int
+		TronFindOutcomingTransactionAddress func(childComplexity int, hash string, page int, pageSize int) int
+		TronFindTransactionByHash           func(childComplexity int, hash string) int
+		TronFindTransactionsByAddress       func(childComplexity int, hash string, page int, pageSize int) int
+		TronFindTransactionsInBlock         func(childComplexity int, height int, page int, pageSize int) int
+		TronRisk                            func(childComplexity int, address string) int
+		TronSearch                          func(childComplexity int, query string, page int, limit int, wildcard *bool) int
+		User                                func(childComplexity int, id int64) int
+		UserList                            func(childComplexity int, page int, pageSize int) int
 	}
 
 	RefreshTokenResponse struct {
@@ -274,6 +376,29 @@ type ComplexityRoot struct {
 		State  func(childComplexity int) int
 	}
 
+	Risk struct {
+		Calculated func(childComplexity int) int
+		Reported   func(childComplexity int) int
+		Risk       func(childComplexity int) int
+		Wallet     func(childComplexity int) int
+	}
+
+	RiskData struct {
+		Category func(childComplexity int) int
+		Risk     func(childComplexity int) int
+	}
+
+	RiskNodeEntityResponse struct {
+		Errors func(childComplexity int) int
+		Node   func(childComplexity int) int
+		Risk   func(childComplexity int) int
+	}
+
+	RiskResponse struct {
+		Errors func(childComplexity int) int
+		Risk   func(childComplexity int) int
+	}
+
 	SearchCountResponse struct {
 		Count  func(childComplexity int) int
 		Errors func(childComplexity int) int
@@ -283,6 +408,11 @@ type ComplexityRoot struct {
 		Edge   func(childComplexity int) int
 		Errors func(childComplexity int) int
 		Total  func(childComplexity int) int
+	}
+
+	StatisticsSummary struct {
+		Network func(childComplexity int) int
+		Total   func(childComplexity int) int
 	}
 
 	Subscription struct {
@@ -314,7 +444,25 @@ type BillingPacketResolver interface {
 	CreatedAt(ctx context.Context, obj *models.BillingPacket) (string, error)
 }
 type BillingRequestResolver interface {
+	Categories(ctx context.Context, obj *models.BillingRequest) ([]*models.BillingRisk, error)
+
 	CreatedAt(ctx context.Context, obj *models.BillingRequest) (string, error)
+}
+type BillingRiskResolver interface {
+	Directory(ctx context.Context, obj *models.BillingRisk) (*models.CategoryGroup, error)
+	Category(ctx context.Context, obj *models.BillingRisk) (*models.Category, error)
+}
+type BillingStatisticsBlockchainResolver interface {
+	Categories(ctx context.Context, obj *models.BillingStatisticsBlockchain) ([]*models.BillingStatisticsCategory, error)
+}
+type BillingStatisticsCategoryResolver interface {
+	Number(ctx context.Context, obj *models.BillingStatisticsCategory) (int, error)
+}
+type CalculatedRiskResolver interface {
+	Items(ctx context.Context, obj *neo4jstore.CalculatedRisk) ([]*neo4jstore.CalculateItem, error)
+}
+type CategoryResolver interface {
+	CategoryGroup(ctx context.Context, obj *models.Category) (*models.CategoryGroup, error)
 }
 type MutationResolver interface {
 	Health(ctx context.Context) (bool, error)
@@ -335,20 +483,21 @@ type MutationResolver interface {
 	CategoryRemoveByID(ctx context.Context, id int64) (*model.CategoryRemoveResponse, error)
 }
 type NodeResolver interface {
-	Props(ctx context.Context, obj *neoutils.Node) (interface{}, error)
+	Props(ctx context.Context, obj *neo4jstore.Node) (interface{}, error)
 }
 type QueryResolver interface {
 	Health(ctx context.Context) (bool, error)
 	Me(ctx context.Context) (*models.User, error)
-	BillingHistoryList(ctx context.Context, page int, pageSize int) (*model.BillingHistoryListResponse, error)
+	BillingHistoryList(ctx context.Context, filter model.BillingHistoryListInput) (*model.BillingHistoryListResponse, error)
+	BillingStatistics(ctx context.Context, filter model.BillingStatisticsFilterInput) (*model.BillingStatisticsResponse, error)
+	BillingStatisticsSummary(ctx context.Context, filter model.StatisticsSummaryInput) (*model.BillingStatisticsSummaryResponse, error)
+	BillingStatisticsRiskRange(ctx context.Context, filter model.BillingStatisticsRiskRangeInput) ([]int, error)
 	BillingKeyList(ctx context.Context, page int, pageSize int) (*model.BillingKeyResponse, error)
-	BtcExistsAddressByHashCount(ctx context.Context, address string) (*model.NodeCountResponse, error)
-	BtcExistsTransactionByHashCount(ctx context.Context, address string) (*model.NodeCountResponse, error)
 	BtcFindContactByAddress(ctx context.Context, address string) (*model.NodeEntityResponse, error)
 	BtcFindTransactionByHash(ctx context.Context, address string) (*model.NodeEntityResponse, error)
-	BtcFindAddressByHash(ctx context.Context, address string) (*model.NodeEntityResponse, error)
+	BtcFindAddressByHash(ctx context.Context, address string) (*model.FindAddressByHashNodeResponse, error)
 	BtcFindWalletForAddress(ctx context.Context, address string) (*model.NodeEntityResponse, error)
-	BtcFindRiskScore(ctx context.Context, address string) (*model.NodeEntityResponse, error)
+	BtcRisk(ctx context.Context, address string) (*model.RiskResponse, error)
 	BtcFindBlockByNumber(ctx context.Context, height int) (*model.NodeEntityResponse, error)
 	BtcFindBlockByHash(ctx context.Context, hash string) (*model.NodeEntityResponse, error)
 	BtcFindBlockByTransaction(ctx context.Context, txid string) (*model.NodeEntityResponse, error)
@@ -357,29 +506,46 @@ type QueryResolver interface {
 	BtcFindIncomingTransactions(ctx context.Context, txid string, page int, pageSize int) (*model.NodeListResponse, error)
 	BtcFindOutcomingTransactions(ctx context.Context, txid string, page int, pageSize int) (*model.NodeListResponse, error)
 	BtcFindTransactionsInBlock(ctx context.Context, height int, page int, pageSize int) (*model.NodeListResponse, error)
-	BtcFindAllInputAndOutputByTransaction(ctx context.Context, txid string, page int, pageSize int) (*model.NodeListResponse, error)
 	BtcFindTransactionsInBlockByHash(ctx context.Context, hash string, page int, pageSize int) (*model.NodeListResponse, error)
 	BtcFindWalletByWid(ctx context.Context, wid string) (*model.NodeEntityResponse, error)
 	BtcFindWalletAddresses(ctx context.Context, wid string, page int, pageSize int) (*model.NodeListResponse, error)
-	CategoryList(ctx context.Context) (*model.CategoryListResponse, error)
+	BtcSearch(ctx context.Context, query string, page int, limit int, wildcard *bool) (*model.SearchResponse, error)
+	CategoryList(ctx context.Context, id *int64) (*model.CategoryListResponse, error)
+	CategoryAllList(ctx context.Context) (*model.CategoryListResponse, error)
 	CategoryFindByID(ctx context.Context, id int64) (*models.Category, error)
-	EthFindAddressByHash(ctx context.Context, address string) (*model.NodeEntityResponse, error)
+	EthFindAddressByHash(ctx context.Context, address string) (*model.FindAddressByHashNodeResponse, error)
 	EthFindTransactionsByAddress(ctx context.Context, hash string, page int, pageSize int) (*model.NodeListResponse, error)
 	EthFindTransactionByHash(ctx context.Context, hash string) (*model.NodeEntityResponse, error)
-	EthFindIncomingTransactionAddress(ctx context.Context, hash string) (*model.NodeEntityResponse, error)
-	EthFindOutcomingTransactionAddress(ctx context.Context, hash string) (*model.NodeEntityResponse, error)
+	EthFindIncomingTransactionAddress(ctx context.Context, hash string, page int, pageSize int) (*model.NodeListResponse, error)
+	EthFindOutcomingTransactionAddress(ctx context.Context, hash string, page int, pageSize int) (*model.NodeListResponse, error)
 	EthFindBlockByTransaction(ctx context.Context, hash string) (*model.NodeEntityResponse, error)
-	EthFindBlockByHeight(ctx context.Context, height string) (*model.NodeEntityResponse, error)
-	EthFindTransactionsInBlock(ctx context.Context, height string, page int, pageSize int) (*model.NodeListResponse, error)
-	EthFindAllInputAndOutputTransactions(ctx context.Context, hash string, page int, pageSize int) (*model.NodeListResponse, error)
+	EthFindBlockByHeight(ctx context.Context, height int) (*model.NodeEntityResponse, error)
+	EthFindTransactionsInBlock(ctx context.Context, height int, page int, pageSize int) (*model.NodeListResponse, error)
 	EthFindBlockByHash(ctx context.Context, hash string) (*model.NodeEntityResponse, error)
 	EthFindMentionsByAddress(ctx context.Context, address string, page int, pageSize int) (*model.NodeListResponse, error)
 	EthFindContactByAddress(ctx context.Context, address string) (*model.NodeEntityResponse, error)
-	EthFindRiskScoreByAddress(ctx context.Context, address string) (*model.NodeEntityResponse, error)
-	Search(ctx context.Context, query string, page int, limit int) (*model.SearchResponse, error)
-	SearchCount(ctx context.Context, query string) (*model.SearchCountResponse, error)
+	EthRisk(ctx context.Context, address string) (*model.RiskResponse, error)
+	EthSearch(ctx context.Context, query string, page int, limit int, wildcard *bool) (*model.SearchResponse, error)
+	Search(ctx context.Context, query string, page int, limit int, wildcard bool) (*model.SearchResponse, error)
+	SearchCount(ctx context.Context, query string, wildcard bool) (*model.SearchCountResponse, error)
+	TronFindAddressByHash(ctx context.Context, address string) (*model.FindAddressByHashNodeResponse, error)
+	TronFindTransactionsByAddress(ctx context.Context, hash string, page int, pageSize int) (*model.NodeListResponse, error)
+	TronFindTransactionByHash(ctx context.Context, hash string) (*model.NodeEntityResponse, error)
+	TronFindIncomingTransactionAddress(ctx context.Context, hash string, page int, pageSize int) (*model.NodeListResponse, error)
+	TronFindOutcomingTransactionAddress(ctx context.Context, hash string, page int, pageSize int) (*model.NodeListResponse, error)
+	TronFindBlockByTransaction(ctx context.Context, hash string) (*model.NodeEntityResponse, error)
+	TronFindBlockByHeight(ctx context.Context, height int) (*model.NodeEntityResponse, error)
+	TronFindTransactionsInBlock(ctx context.Context, height int, page int, pageSize int) (*model.NodeListResponse, error)
+	TronFindBlockByHash(ctx context.Context, hash string) (*model.NodeEntityResponse, error)
+	TronFindMentionsByAddress(ctx context.Context, address string, page int, pageSize int) (*model.NodeListResponse, error)
+	TronFindContactByAddress(ctx context.Context, address string) (*model.NodeEntityResponse, error)
+	TronRisk(ctx context.Context, address string) (*model.RiskResponse, error)
+	TronSearch(ctx context.Context, query string, page int, limit int, wildcard *bool) (*model.SearchResponse, error)
 	User(ctx context.Context, id int64) (*models.User, error)
 	UserList(ctx context.Context, page int, pageSize int) (*model.UserListResponse, error)
+}
+type RiskDataResolver interface {
+	Category(ctx context.Context, obj *neo4jstore.RiskData) (*models.Category, error)
 }
 type SubscriptionResolver interface {
 	Health(ctx context.Context) (<-chan bool, error)
@@ -538,12 +704,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.BillingPacket.UserID(childComplexity), true
 
-	case "BillingRequest.category":
-		if e.complexity.BillingRequest.Category == nil {
+	case "BillingRequest.categories":
+		if e.complexity.BillingRequest.Categories == nil {
 			break
 		}
 
-		return e.complexity.BillingRequest.Category(childComplexity), true
+		return e.complexity.BillingRequest.Categories(childComplexity), true
 
 	case "BillingRequest.createdAt":
 		if e.complexity.BillingRequest.CreatedAt == nil {
@@ -558,6 +724,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.BillingRequest.ID(childComplexity), true
+
+	case "BillingRequest.isCalculated":
+		if e.complexity.BillingRequest.IsCalculated == nil {
+			break
+		}
+
+		return e.complexity.BillingRequest.IsCalculated(childComplexity), true
+
+	case "BillingRequest.isReported":
+		if e.complexity.BillingRequest.IsReported == nil {
+			break
+		}
+
+		return e.complexity.BillingRequest.IsReported(childComplexity), true
+
+	case "BillingRequest.isWallet":
+		if e.complexity.BillingRequest.IsWallet == nil {
+			break
+		}
+
+		return e.complexity.BillingRequest.IsWallet(childComplexity), true
 
 	case "BillingRequest.network":
 		if e.complexity.BillingRequest.Network == nil {
@@ -587,6 +774,237 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.BillingRequest.UserID(childComplexity), true
 
+	case "BillingRisk.category":
+		if e.complexity.BillingRisk.Category == nil {
+			break
+		}
+
+		return e.complexity.BillingRisk.Category(childComplexity), true
+
+	case "BillingRisk.directory":
+		if e.complexity.BillingRisk.Directory == nil {
+			break
+		}
+
+		return e.complexity.BillingRisk.Directory(childComplexity), true
+
+	case "BillingRisk.id":
+		if e.complexity.BillingRisk.ID == nil {
+			break
+		}
+
+		return e.complexity.BillingRisk.ID(childComplexity), true
+
+	case "BillingRisk.isCalculated":
+		if e.complexity.BillingRisk.IsCalculated == nil {
+			break
+		}
+
+		return e.complexity.BillingRisk.IsCalculated(childComplexity), true
+
+	case "BillingRisk.isReported":
+		if e.complexity.BillingRisk.IsReported == nil {
+			break
+		}
+
+		return e.complexity.BillingRisk.IsReported(childComplexity), true
+
+	case "BillingRisk.isWallet":
+		if e.complexity.BillingRisk.IsWallet == nil {
+			break
+		}
+
+		return e.complexity.BillingRisk.IsWallet(childComplexity), true
+
+	case "BillingRisk.percent":
+		if e.complexity.BillingRisk.Percent == nil {
+			break
+		}
+
+		return e.complexity.BillingRisk.Percent(childComplexity), true
+
+	case "BillingRisk.percentRaw":
+		if e.complexity.BillingRisk.PercentRaw == nil {
+			break
+		}
+
+		return e.complexity.BillingRisk.PercentRaw(childComplexity), true
+
+	case "BillingRisk.risk":
+		if e.complexity.BillingRisk.Risk == nil {
+			break
+		}
+
+		return e.complexity.BillingRisk.Risk(childComplexity), true
+
+	case "BillingRisk.riskRaw":
+		if e.complexity.BillingRisk.RiskRaw == nil {
+			break
+		}
+
+		return e.complexity.BillingRisk.RiskRaw(childComplexity), true
+
+	case "BillingRisk.total":
+		if e.complexity.BillingRisk.Total == nil {
+			break
+		}
+
+		return e.complexity.BillingRisk.Total(childComplexity), true
+
+	case "BillingStatisticsBlockchain.categories":
+		if e.complexity.BillingStatisticsBlockchain.Categories == nil {
+			break
+		}
+
+		return e.complexity.BillingStatisticsBlockchain.Categories(childComplexity), true
+
+	case "BillingStatisticsBlockchain.total":
+		if e.complexity.BillingStatisticsBlockchain.Total == nil {
+			break
+		}
+
+		return e.complexity.BillingStatisticsBlockchain.Total(childComplexity), true
+
+	case "BillingStatisticsCategory.name":
+		if e.complexity.BillingStatisticsCategory.Name == nil {
+			break
+		}
+
+		return e.complexity.BillingStatisticsCategory.Name(childComplexity), true
+
+	case "BillingStatisticsCategory.number":
+		if e.complexity.BillingStatisticsCategory.Number == nil {
+			break
+		}
+
+		return e.complexity.BillingStatisticsCategory.Number(childComplexity), true
+
+	case "BillingStatisticsCategory.risk":
+		if e.complexity.BillingStatisticsCategory.Risk == nil {
+			break
+		}
+
+		return e.complexity.BillingStatisticsCategory.Risk(childComplexity), true
+
+	case "BillingStatisticsResponse.errors":
+		if e.complexity.BillingStatisticsResponse.Errors == nil {
+			break
+		}
+
+		return e.complexity.BillingStatisticsResponse.Errors(childComplexity), true
+
+	case "BillingStatisticsResponse.stats":
+		if e.complexity.BillingStatisticsResponse.Stats == nil {
+			break
+		}
+
+		return e.complexity.BillingStatisticsResponse.Stats(childComplexity), true
+
+	case "BillingStatisticsRisk.name":
+		if e.complexity.BillingStatisticsRisk.Name == nil {
+			break
+		}
+
+		return e.complexity.BillingStatisticsRisk.Name(childComplexity), true
+
+	case "BillingStatisticsRisk.total":
+		if e.complexity.BillingStatisticsRisk.Total == nil {
+			break
+		}
+
+		return e.complexity.BillingStatisticsRisk.Total(childComplexity), true
+
+	case "BillingStatisticsSummaryResponse.errors":
+		if e.complexity.BillingStatisticsSummaryResponse.Errors == nil {
+			break
+		}
+
+		return e.complexity.BillingStatisticsSummaryResponse.Errors(childComplexity), true
+
+	case "BillingStatisticsSummaryResponse.items":
+		if e.complexity.BillingStatisticsSummaryResponse.Items == nil {
+			break
+		}
+
+		return e.complexity.BillingStatisticsSummaryResponse.Items(childComplexity), true
+
+	case "CalculateItem.i18n":
+		if e.complexity.CalculateItem.I18n == nil {
+			break
+		}
+
+		return e.complexity.CalculateItem.I18n(childComplexity), true
+
+	case "CalculateItem.id":
+		if e.complexity.CalculateItem.ID == nil {
+			break
+		}
+
+		return e.complexity.CalculateItem.ID(childComplexity), true
+
+	case "CalculateItem.percent":
+		if e.complexity.CalculateItem.Percent == nil {
+			break
+		}
+
+		return e.complexity.CalculateItem.Percent(childComplexity), true
+
+	case "CalculateItem.percent_raw":
+		if e.complexity.CalculateItem.PercentRaw == nil {
+			break
+		}
+
+		return e.complexity.CalculateItem.PercentRaw(childComplexity), true
+
+	case "CalculateItem.risk":
+		if e.complexity.CalculateItem.Risk == nil {
+			break
+		}
+
+		return e.complexity.CalculateItem.Risk(childComplexity), true
+
+	case "CalculateItem.risk_raw":
+		if e.complexity.CalculateItem.RiskRaw == nil {
+			break
+		}
+
+		return e.complexity.CalculateItem.RiskRaw(childComplexity), true
+
+	case "CalculateItem.total":
+		if e.complexity.CalculateItem.Total == nil {
+			break
+		}
+
+		return e.complexity.CalculateItem.Total(childComplexity), true
+
+	case "CalculatedRisk.items":
+		if e.complexity.CalculatedRisk.Items == nil {
+			break
+		}
+
+		return e.complexity.CalculatedRisk.Items(childComplexity), true
+
+	case "CalculatedRisk.risk":
+		if e.complexity.CalculatedRisk.Risk == nil {
+			break
+		}
+
+		return e.complexity.CalculatedRisk.Risk(childComplexity), true
+
+	case "CalculatedRisk.total":
+		if e.complexity.CalculatedRisk.Total == nil {
+			break
+		}
+
+		return e.complexity.CalculatedRisk.Total(childComplexity), true
+
+	case "Category.categoryGroup":
+		if e.complexity.Category.CategoryGroup == nil {
+			break
+		}
+
+		return e.complexity.Category.CategoryGroup(childComplexity), true
+
 	case "Category.descriptionEn":
 		if e.complexity.Category.DescriptionEn == nil {
 			break
@@ -615,6 +1033,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Category.Name(childComplexity), true
 
+	case "Category.number":
+		if e.complexity.Category.Number == nil {
+			break
+		}
+
+		return e.complexity.Category.Number(childComplexity), true
+
 	case "Category.risk":
 		if e.complexity.Category.Risk == nil {
 			break
@@ -636,6 +1061,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.CategoryCreateResponse.Errors(childComplexity), true
 
+	case "CategoryGroup.id":
+		if e.complexity.CategoryGroup.ID == nil {
+			break
+		}
+
+		return e.complexity.CategoryGroup.ID(childComplexity), true
+
+	case "CategoryGroup.nameEn":
+		if e.complexity.CategoryGroup.NameEn == nil {
+			break
+		}
+
+		return e.complexity.CategoryGroup.NameEn(childComplexity), true
+
+	case "CategoryGroup.nameRu":
+		if e.complexity.CategoryGroup.NameRu == nil {
+			break
+		}
+
+		return e.complexity.CategoryGroup.NameRu(childComplexity), true
+
 	case "CategoryListResponse.edge":
 		if e.complexity.CategoryListResponse.Edge == nil {
 			break
@@ -649,13 +1095,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.CategoryListResponse.Errors(childComplexity), true
-
-	case "CategoryListResponse.total":
-		if e.complexity.CategoryListResponse.Total == nil {
-			break
-		}
-
-		return e.complexity.CategoryListResponse.Total(childComplexity), true
 
 	case "CategoryRemoveResponse.errors":
 		if e.complexity.CategoryRemoveResponse.Errors == nil {
@@ -691,6 +1130,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.ChangePasswordResponse.Jwt(childComplexity), true
+
+	case "DirectoryI18n.en":
+		if e.complexity.DirectoryI18n.En == nil {
+			break
+		}
+
+		return e.complexity.DirectoryI18n.En(childComplexity), true
+
+	case "DirectoryI18n.ru":
+		if e.complexity.DirectoryI18n.Ru == nil {
+			break
+		}
+
+		return e.complexity.DirectoryI18n.Ru(childComplexity), true
 
 	case "Entity.address":
 		if e.complexity.Entity.Address == nil {
@@ -733,6 +1186,34 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Entity.Date(childComplexity), true
+
+	case "FindAddressByHashNode.address":
+		if e.complexity.FindAddressByHashNode.Address == nil {
+			break
+		}
+
+		return e.complexity.FindAddressByHashNode.Address(childComplexity), true
+
+	case "FindAddressByHashNode.total":
+		if e.complexity.FindAddressByHashNode.Total == nil {
+			break
+		}
+
+		return e.complexity.FindAddressByHashNode.Total(childComplexity), true
+
+	case "FindAddressByHashNodeResponse.errors":
+		if e.complexity.FindAddressByHashNodeResponse.Errors == nil {
+			break
+		}
+
+		return e.complexity.FindAddressByHashNodeResponse.Errors(childComplexity), true
+
+	case "FindAddressByHashNodeResponse.node":
+		if e.complexity.FindAddressByHashNodeResponse.Node == nil {
+			break
+		}
+
+		return e.complexity.FindAddressByHashNodeResponse.Node(childComplexity), true
 
 	case "Jwt.accessToken":
 		if e.complexity.Jwt.AccessToken == nil {
@@ -1054,7 +1535,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.BillingHistoryList(childComplexity, args["page"].(int), args["pageSize"].(int)), true
+		return e.complexity.Query.BillingHistoryList(childComplexity, args["filter"].(model.BillingHistoryListInput)), true
 
 	case "Query.billingKeyList":
 		if e.complexity.Query.BillingKeyList == nil {
@@ -1068,29 +1549,41 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.BillingKeyList(childComplexity, args["page"].(int), args["pageSize"].(int)), true
 
-	case "Query.btcExistsAddressByHashCount":
-		if e.complexity.Query.BtcExistsAddressByHashCount == nil {
+	case "Query.billingStatistics":
+		if e.complexity.Query.BillingStatistics == nil {
 			break
 		}
 
-		args, err := ec.field_Query_btcExistsAddressByHashCount_args(context.TODO(), rawArgs)
+		args, err := ec.field_Query_billingStatistics_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Query.BtcExistsAddressByHashCount(childComplexity, args["address"].(string)), true
+		return e.complexity.Query.BillingStatistics(childComplexity, args["filter"].(model.BillingStatisticsFilterInput)), true
 
-	case "Query.btcExistsTransactionByHashCount":
-		if e.complexity.Query.BtcExistsTransactionByHashCount == nil {
+	case "Query.billingStatisticsRiskRange":
+		if e.complexity.Query.BillingStatisticsRiskRange == nil {
 			break
 		}
 
-		args, err := ec.field_Query_btcExistsTransactionByHashCount_args(context.TODO(), rawArgs)
+		args, err := ec.field_Query_billingStatisticsRiskRange_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Query.BtcExistsTransactionByHashCount(childComplexity, args["address"].(string)), true
+		return e.complexity.Query.BillingStatisticsRiskRange(childComplexity, args["filter"].(model.BillingStatisticsRiskRangeInput)), true
+
+	case "Query.billingStatisticsSummary":
+		if e.complexity.Query.BillingStatisticsSummary == nil {
+			break
+		}
+
+		args, err := ec.field_Query_billingStatisticsSummary_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.BillingStatisticsSummary(childComplexity, args["filter"].(model.StatisticsSummaryInput)), true
 
 	case "Query.btcFindAddressByHash":
 		if e.complexity.Query.BtcFindAddressByHash == nil {
@@ -1103,18 +1596,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.BtcFindAddressByHash(childComplexity, args["address"].(string)), true
-
-	case "Query.btcFindAllInputAndOutputByTransaction":
-		if e.complexity.Query.BtcFindAllInputAndOutputByTransaction == nil {
-			break
-		}
-
-		args, err := ec.field_Query_btcFindAllInputAndOutputByTransaction_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Query.BtcFindAllInputAndOutputByTransaction(childComplexity, args["txid"].(string), args["page"].(int), args["pageSize"].(int)), true
 
 	case "Query.btcFindBlockByHash":
 		if e.complexity.Query.BtcFindBlockByHash == nil {
@@ -1200,18 +1681,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.BtcFindOutcomingTransactions(childComplexity, args["txid"].(string), args["page"].(int), args["pageSize"].(int)), true
 
-	case "Query.btcFindRiskScore":
-		if e.complexity.Query.BtcFindRiskScore == nil {
-			break
-		}
-
-		args, err := ec.field_Query_btcFindRiskScore_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Query.BtcFindRiskScore(childComplexity, args["address"].(string)), true
-
 	case "Query.btcFindTransactionByHash":
 		if e.complexity.Query.BtcFindTransactionByHash == nil {
 			break
@@ -1296,6 +1765,37 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.BtcFindWalletForAddress(childComplexity, args["address"].(string)), true
 
+	case "Query.btcRisk":
+		if e.complexity.Query.BtcRisk == nil {
+			break
+		}
+
+		args, err := ec.field_Query_btcRisk_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.BtcRisk(childComplexity, args["address"].(string)), true
+
+	case "Query.btcSearch":
+		if e.complexity.Query.BtcSearch == nil {
+			break
+		}
+
+		args, err := ec.field_Query_btcSearch_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.BtcSearch(childComplexity, args["query"].(string), args["page"].(int), args["limit"].(int), args["wildcard"].(*bool)), true
+
+	case "Query.categoryAllList":
+		if e.complexity.Query.CategoryAllList == nil {
+			break
+		}
+
+		return e.complexity.Query.CategoryAllList(childComplexity), true
+
 	case "Query.categoryFindById":
 		if e.complexity.Query.CategoryFindByID == nil {
 			break
@@ -1313,7 +1813,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		return e.complexity.Query.CategoryList(childComplexity), true
+		args, err := ec.field_Query_categoryList_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.CategoryList(childComplexity, args["id"].(*int64)), true
 
 	case "Query.ethFindAddressByHash":
 		if e.complexity.Query.EthFindAddressByHash == nil {
@@ -1326,18 +1831,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.EthFindAddressByHash(childComplexity, args["address"].(string)), true
-
-	case "Query.ethFindAllInputAndOutputTransactions":
-		if e.complexity.Query.EthFindAllInputAndOutputTransactions == nil {
-			break
-		}
-
-		args, err := ec.field_Query_ethFindAllInputAndOutputTransactions_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Query.EthFindAllInputAndOutputTransactions(childComplexity, args["hash"].(string), args["page"].(int), args["pageSize"].(int)), true
 
 	case "Query.ethFindBlockByHash":
 		if e.complexity.Query.EthFindBlockByHash == nil {
@@ -1361,7 +1854,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.EthFindBlockByHeight(childComplexity, args["height"].(string)), true
+		return e.complexity.Query.EthFindBlockByHeight(childComplexity, args["height"].(int)), true
 
 	case "Query.ethFindBlockByTransaction":
 		if e.complexity.Query.EthFindBlockByTransaction == nil {
@@ -1397,7 +1890,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.EthFindIncomingTransactionAddress(childComplexity, args["hash"].(string)), true
+		return e.complexity.Query.EthFindIncomingTransactionAddress(childComplexity, args["hash"].(string), args["page"].(int), args["pageSize"].(int)), true
 
 	case "Query.ethFindMentionsByAddress":
 		if e.complexity.Query.EthFindMentionsByAddress == nil {
@@ -1421,19 +1914,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.EthFindOutcomingTransactionAddress(childComplexity, args["hash"].(string)), true
-
-	case "Query.ethFindRiskScoreByAddress":
-		if e.complexity.Query.EthFindRiskScoreByAddress == nil {
-			break
-		}
-
-		args, err := ec.field_Query_ethFindRiskScoreByAddress_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Query.EthFindRiskScoreByAddress(childComplexity, args["address"].(string)), true
+		return e.complexity.Query.EthFindOutcomingTransactionAddress(childComplexity, args["hash"].(string), args["page"].(int), args["pageSize"].(int)), true
 
 	case "Query.ethFindTransactionByHash":
 		if e.complexity.Query.EthFindTransactionByHash == nil {
@@ -1469,7 +1950,31 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.EthFindTransactionsInBlock(childComplexity, args["height"].(string), args["page"].(int), args["pageSize"].(int)), true
+		return e.complexity.Query.EthFindTransactionsInBlock(childComplexity, args["height"].(int), args["page"].(int), args["pageSize"].(int)), true
+
+	case "Query.ethRisk":
+		if e.complexity.Query.EthRisk == nil {
+			break
+		}
+
+		args, err := ec.field_Query_ethRisk_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.EthRisk(childComplexity, args["address"].(string)), true
+
+	case "Query.ethSearch":
+		if e.complexity.Query.EthSearch == nil {
+			break
+		}
+
+		args, err := ec.field_Query_ethSearch_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.EthSearch(childComplexity, args["query"].(string), args["page"].(int), args["limit"].(int), args["wildcard"].(*bool)), true
 
 	case "Query.health":
 		if e.complexity.Query.Health == nil {
@@ -1495,7 +2000,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Search(childComplexity, args["query"].(string), args["page"].(int), args["limit"].(int)), true
+		return e.complexity.Query.Search(childComplexity, args["query"].(string), args["page"].(int), args["limit"].(int), args["wildcard"].(bool)), true
 
 	case "Query.searchCount":
 		if e.complexity.Query.SearchCount == nil {
@@ -1507,7 +2012,163 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.SearchCount(childComplexity, args["query"].(string)), true
+		return e.complexity.Query.SearchCount(childComplexity, args["query"].(string), args["wildcard"].(bool)), true
+
+	case "Query.tronFindAddressByHash":
+		if e.complexity.Query.TronFindAddressByHash == nil {
+			break
+		}
+
+		args, err := ec.field_Query_tronFindAddressByHash_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.TronFindAddressByHash(childComplexity, args["address"].(string)), true
+
+	case "Query.tronFindBlockByHash":
+		if e.complexity.Query.TronFindBlockByHash == nil {
+			break
+		}
+
+		args, err := ec.field_Query_tronFindBlockByHash_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.TronFindBlockByHash(childComplexity, args["hash"].(string)), true
+
+	case "Query.tronFindBlockByHeight":
+		if e.complexity.Query.TronFindBlockByHeight == nil {
+			break
+		}
+
+		args, err := ec.field_Query_tronFindBlockByHeight_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.TronFindBlockByHeight(childComplexity, args["height"].(int)), true
+
+	case "Query.tronFindBlockByTransaction":
+		if e.complexity.Query.TronFindBlockByTransaction == nil {
+			break
+		}
+
+		args, err := ec.field_Query_tronFindBlockByTransaction_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.TronFindBlockByTransaction(childComplexity, args["hash"].(string)), true
+
+	case "Query.tronFindContactByAddress":
+		if e.complexity.Query.TronFindContactByAddress == nil {
+			break
+		}
+
+		args, err := ec.field_Query_tronFindContactByAddress_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.TronFindContactByAddress(childComplexity, args["address"].(string)), true
+
+	case "Query.tronFindIncomingTransactionAddress":
+		if e.complexity.Query.TronFindIncomingTransactionAddress == nil {
+			break
+		}
+
+		args, err := ec.field_Query_tronFindIncomingTransactionAddress_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.TronFindIncomingTransactionAddress(childComplexity, args["hash"].(string), args["page"].(int), args["pageSize"].(int)), true
+
+	case "Query.tronFindMentionsByAddress":
+		if e.complexity.Query.TronFindMentionsByAddress == nil {
+			break
+		}
+
+		args, err := ec.field_Query_tronFindMentionsByAddress_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.TronFindMentionsByAddress(childComplexity, args["address"].(string), args["page"].(int), args["pageSize"].(int)), true
+
+	case "Query.tronFindOutcomingTransactionAddress":
+		if e.complexity.Query.TronFindOutcomingTransactionAddress == nil {
+			break
+		}
+
+		args, err := ec.field_Query_tronFindOutcomingTransactionAddress_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.TronFindOutcomingTransactionAddress(childComplexity, args["hash"].(string), args["page"].(int), args["pageSize"].(int)), true
+
+	case "Query.tronFindTransactionByHash":
+		if e.complexity.Query.TronFindTransactionByHash == nil {
+			break
+		}
+
+		args, err := ec.field_Query_tronFindTransactionByHash_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.TronFindTransactionByHash(childComplexity, args["hash"].(string)), true
+
+	case "Query.tronFindTransactionsByAddress":
+		if e.complexity.Query.TronFindTransactionsByAddress == nil {
+			break
+		}
+
+		args, err := ec.field_Query_tronFindTransactionsByAddress_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.TronFindTransactionsByAddress(childComplexity, args["hash"].(string), args["page"].(int), args["pageSize"].(int)), true
+
+	case "Query.tronFindTransactionsInBlock":
+		if e.complexity.Query.TronFindTransactionsInBlock == nil {
+			break
+		}
+
+		args, err := ec.field_Query_tronFindTransactionsInBlock_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.TronFindTransactionsInBlock(childComplexity, args["height"].(int), args["page"].(int), args["pageSize"].(int)), true
+
+	case "Query.tronRisk":
+		if e.complexity.Query.TronRisk == nil {
+			break
+		}
+
+		args, err := ec.field_Query_tronRisk_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.TronRisk(childComplexity, args["address"].(string)), true
+
+	case "Query.tronSearch":
+		if e.complexity.Query.TronSearch == nil {
+			break
+		}
+
+		args, err := ec.field_Query_tronSearch_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.TronSearch(childComplexity, args["query"].(string), args["page"].(int), args["limit"].(int), args["wildcard"].(*bool)), true
 
 	case "Query.user":
 		if e.complexity.Query.User == nil {
@@ -1603,6 +2264,83 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.RestoreResponse.State(childComplexity), true
 
+	case "Risk.calculated":
+		if e.complexity.Risk.Calculated == nil {
+			break
+		}
+
+		return e.complexity.Risk.Calculated(childComplexity), true
+
+	case "Risk.reported":
+		if e.complexity.Risk.Reported == nil {
+			break
+		}
+
+		return e.complexity.Risk.Reported(childComplexity), true
+
+	case "Risk.risk":
+		if e.complexity.Risk.Risk == nil {
+			break
+		}
+
+		return e.complexity.Risk.Risk(childComplexity), true
+
+	case "Risk.wallet":
+		if e.complexity.Risk.Wallet == nil {
+			break
+		}
+
+		return e.complexity.Risk.Wallet(childComplexity), true
+
+	case "RiskData.category":
+		if e.complexity.RiskData.Category == nil {
+			break
+		}
+
+		return e.complexity.RiskData.Category(childComplexity), true
+
+	case "RiskData.risk":
+		if e.complexity.RiskData.Risk == nil {
+			break
+		}
+
+		return e.complexity.RiskData.Risk(childComplexity), true
+
+	case "RiskNodeEntityResponse.errors":
+		if e.complexity.RiskNodeEntityResponse.Errors == nil {
+			break
+		}
+
+		return e.complexity.RiskNodeEntityResponse.Errors(childComplexity), true
+
+	case "RiskNodeEntityResponse.node":
+		if e.complexity.RiskNodeEntityResponse.Node == nil {
+			break
+		}
+
+		return e.complexity.RiskNodeEntityResponse.Node(childComplexity), true
+
+	case "RiskNodeEntityResponse.risk":
+		if e.complexity.RiskNodeEntityResponse.Risk == nil {
+			break
+		}
+
+		return e.complexity.RiskNodeEntityResponse.Risk(childComplexity), true
+
+	case "RiskResponse.errors":
+		if e.complexity.RiskResponse.Errors == nil {
+			break
+		}
+
+		return e.complexity.RiskResponse.Errors(childComplexity), true
+
+	case "RiskResponse.risk":
+		if e.complexity.RiskResponse.Risk == nil {
+			break
+		}
+
+		return e.complexity.RiskResponse.Risk(childComplexity), true
+
 	case "SearchCountResponse.count":
 		if e.complexity.SearchCountResponse.Count == nil {
 			break
@@ -1637,6 +2375,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.SearchResponse.Total(childComplexity), true
+
+	case "StatisticsSummary.network":
+		if e.complexity.StatisticsSummary.Network == nil {
+			break
+		}
+
+		return e.complexity.StatisticsSummary.Network(childComplexity), true
+
+	case "StatisticsSummary.total":
+		if e.complexity.StatisticsSummary.Total == nil {
+			break
+		}
+
+		return e.complexity.StatisticsSummary.Total(childComplexity), true
 
 	case "Subscription.health":
 		if e.complexity.Subscription.Health == nil {
@@ -1730,6 +2482,9 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 	rc := graphql.GetOperationContext(ctx)
 	ec := executionContext{rc, e}
 	inputUnmarshalMap := graphql.BuildUnmarshalerMap(
+		ec.unmarshalInputBillingHistoryListInput,
+		ec.unmarshalInputBillingStatisticsFilterInput,
+		ec.unmarshalInputBillingStatisticsRiskRangeInput,
 		ec.unmarshalInputCategoryCreateInput,
 		ec.unmarshalInputCategoryUpdateInput,
 		ec.unmarshalInputChangePasswordInput,
@@ -1740,6 +2495,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputRestoreCheckInput,
 		ec.unmarshalInputRestoreConfirmInput,
 		ec.unmarshalInputRestoreInput,
+		ec.unmarshalInputStatisticsSummaryInput,
 	)
 	first := true
 
@@ -1943,8 +2699,11 @@ type BillingAddPacketResponse {
     id: ID!
     userId: ID!
     query: String!
-    risk: Int!
-    category: String!
+    risk: Float!
+    isCalculated: Boolean!
+    isReported: Boolean!
+    isWallet: Boolean!
+    categories: [BillingRisk!]!
     network: String!
     createdAt: DateTime!
 }
@@ -1956,14 +2715,90 @@ type BillingPacket {
     createdAt: DateTime!
 }
 
+type BillingStatisticsCategory {
+    number: Int!
+    name: String!
+    risk: Float!
+}
+
+type BillingStatisticsBlockchain {
+    total: Int64!
+    categories: [BillingStatisticsCategory!]!
+}
+
+type BillingRisk {
+    id: Int64!
+    risk: Float!
+    riskRaw: Float!
+    percent: Float!
+    percentRaw: Float!
+    isCalculated: Boolean!
+    isReported: Boolean!
+    isWallet: Boolean!
+    total: Float!
+    directory: CategoryGroup!
+    category: Category
+}
+
+type BillingStatisticsRisk {
+    name: String!
+    total: Int64!
+}
+
 type BillingHistoryListResponse {
     errors: Any
     total: Int
     edge: [BillingRequest!]!
 }
 
+type BillingStatisticsResponse {
+    errors: Any
+    stats: BillingStatisticsBlockchain!
+}
+
+input BillingStatisticsFilterInput {
+    network: String!
+    from: Date
+    to: Date
+    last: Boolean
+}
+
+input BillingStatisticsRiskRangeInput {
+    network: String!
+    from: Date
+    to: Date
+    last: Boolean
+}
+
+input StatisticsSummaryInput {
+    from: Date
+    to: Date
+    last: Boolean
+}
+
+type StatisticsSummary {
+    network: String!
+    total: Int!
+}
+
+type BillingStatisticsSummaryResponse {
+    errors: Any
+    items: [StatisticsSummary!]!
+}
+
+input BillingHistoryListInput {
+    page: Int!
+    pageSize: Int!
+    from: Date
+    to: Date
+    last: Boolean
+}
+
 extend type Query {
-    billingHistoryList(page: Int!, pageSize: Int!): BillingHistoryListResponse! @auth
+    billingHistoryList(filter: BillingHistoryListInput!): BillingHistoryListResponse! @auth
+    billingStatistics(filter: BillingStatisticsFilterInput!): BillingStatisticsResponse! @auth
+    billingStatisticsSummary(filter: StatisticsSummaryInput!): BillingStatisticsSummaryResponse! @auth
+    billingStatisticsRiskRange(filter: BillingStatisticsRiskRangeInput!): [Int!]! @auth
 }
 
 extend type Mutation {
@@ -2011,45 +2846,103 @@ type NodeEntityResponse {
     node: Node
 }
 
+type FindAddressByHashNode {
+    total: Float!
+    address: String!
+}
+
+type FindAddressByHashNodeResponse {
+    errors: Any
+    node: FindAddressByHashNode
+}
+
+type RiskResponse {
+    errors: Any
+    risk: Risk
+}
+
+type RiskData {
+    category: Category
+    risk: Float
+}
+
+type Risk {
+    risk: Float
+    reported: RiskData
+    wallet: RiskData
+    calculated: CalculatedRisk
+}
+
+type RiskNodeEntityResponse {
+    errors: Any
+    node: Node
+    risk: CalculatedRisk
+}
+
 type NodeCountResponse {
     errors: Any
     has: Boolean
 }
+
+type CalculateItem {
+    id: ID!
+    total: Float!
+    percent: Float!
+    percent_raw: Float!
+    risk: Float!
+    risk_raw: Float!
+    i18n: DirectoryI18n!
+}
+
+type DirectoryI18n {
+    ru: String!
+    en: String!
+}
+
+type CalculatedRisk {
+    total: Float!
+    risk: Float!
+    items: [CalculateItem!]!
+}
 `, BuiltIn: false},
 	{Name: "../schema/btc.graphqls", Input: `extend type Query {
-    btcExistsAddressByHashCount(address: String!): NodeCountResponse!
-    btcExistsTransactionByHashCount(address: String!): NodeCountResponse!
-
-    btcFindContactByAddress(address: String!): NodeEntityResponse!
+    btcFindContactByAddress(address: String!): NodeEntityResponse! @auth(permissions: ["subscription.explorer.contacts"])
     btcFindTransactionByHash(address: String!): NodeEntityResponse!
-    btcFindAddressByHash(address: String!): NodeEntityResponse!
+    btcFindAddressByHash(address: String!): FindAddressByHashNodeResponse!
     btcFindWalletForAddress(address: String!): NodeEntityResponse!
-    btcFindRiskScore(address: String!): NodeEntityResponse!
+    btcRisk(address: String!): RiskResponse! @auth(permissions: ["subscription.explorer.riskscore"])
     btcFindBlockByNumber(height: Int!): NodeEntityResponse!
     btcFindBlockByHash(hash: String!): NodeEntityResponse!
     btcFindBlockByTransaction(txid: String!): NodeEntityResponse!
     btcFindTransactionsByAddress(address: String!, page: Int!, pageSize: Int!): NodeListResponse!
-    btcFindMentionsForAddress(address: String!, page: Int!, pageSize: Int!): NodeListResponse!
+    btcFindMentionsForAddress(address: String!, page: Int!, pageSize: Int!): NodeListResponse! @auth(permissions: ["subscription.explorer.mentions"])
     btcFindIncomingTransactions(txid: String!, page: Int!, pageSize: Int!): NodeListResponse!
     btcFindOutcomingTransactions(txid: String!, page: Int!, pageSize: Int!): NodeListResponse!
     btcFindTransactionsInBlock(height: Int!, page: Int!, pageSize: Int!): NodeListResponse!
-    btcFindAllInputAndOutputByTransaction(txid: String!, page: Int!, pageSize: Int!): NodeListResponse!
     btcFindTransactionsInBlockByHash(hash: String!, page: Int!, pageSize: Int!): NodeListResponse!
     btcFindWalletByWid(wid: String!): NodeEntityResponse!
     btcFindWalletAddresses(wid: String!, page: Int!, pageSize: Int!): NodeListResponse!
+    btcSearch(query: String!, page: Int! = 0, limit: Int! = 100, wildcard: Boolean): SearchResponse! @auth(permissions: ["subscription.explorer.mentions"])
 }
 `, BuiltIn: false},
-	{Name: "../schema/category.graphqls", Input: `type Category {
+	{Name: "../schema/category.graphqls", Input: `type CategoryGroup {
+    id: Int!
+    nameRu: String!
+    nameEn: String!
+}
+
+type Category {
     id: ID!
+    number: Int!
     name: String!
     descriptionRu: String!
     descriptionEn: String!
     risk: Int!
+    categoryGroup: CategoryGroup
 }
 
 type CategoryListResponse {
     errors: Any
-    total: Int
     edge: [Category!]!
 }
 
@@ -2069,21 +2962,26 @@ type CategoryRemoveResponse {
 
 input CategoryCreateInput {
     name: String!
+    number: Int!
     descriptionRu: String!
     descriptionEn: String!
     risk: Int!
+    categoryGroupId: Int
 }
 
 input CategoryUpdateInput {
     name: String
+    number: Int
     descriptionRu: String
     descriptionEn: String
     risk: Int
+    categoryGroupId: Int
 }
 
 extend type Query {
-    categoryList: CategoryListResponse! @auth(permissions: ["category"])
-    categoryFindById(id: ID!): Category @auth(permissions: ["category"])
+    categoryList(id: ID): CategoryListResponse!
+    categoryAllList: CategoryListResponse!
+    categoryFindById(id: ID!): Category
 }
 
 extend type Mutation {
@@ -2098,19 +2996,19 @@ directive @auth(permissions: [String!]) on FIELD_DEFINITION
 directive @authRefresh on FIELD_DEFINITION
 `, BuiltIn: false},
 	{Name: "../schema/eth.graphqls", Input: `extend type Query {
-    ethFindAddressByHash(address: String!): NodeEntityResponse!
+    ethFindAddressByHash(address: String!): FindAddressByHashNodeResponse!
     ethFindTransactionsByAddress(hash: String!, page: Int!, pageSize: Int!): NodeListResponse!
     ethFindTransactionByHash(hash: String!): NodeEntityResponse!
-    ethFindIncomingTransactionAddress(hash: String!): NodeEntityResponse!
-    ethFindOutcomingTransactionAddress(hash: String!): NodeEntityResponse!
+    ethFindIncomingTransactionAddress(hash: String!, page: Int!, pageSize: Int!): NodeListResponse!
+    ethFindOutcomingTransactionAddress(hash: String!, page: Int!, pageSize: Int!): NodeListResponse!
     ethFindBlockByTransaction(hash: String!): NodeEntityResponse!
-    ethFindBlockByHeight(height: String!): NodeEntityResponse!
-    ethFindTransactionsInBlock(height: String!, page: Int!, pageSize: Int!): NodeListResponse!
-    ethFindAllInputAndOutputTransactions(hash: String!, page: Int!, pageSize: Int!): NodeListResponse!
+    ethFindBlockByHeight(height: Int!): NodeEntityResponse!
+    ethFindTransactionsInBlock(height: Int!, page: Int!, pageSize: Int!): NodeListResponse!
     ethFindBlockByHash(hash: String!): NodeEntityResponse!
-    ethFindMentionsByAddress(address: String!, page: Int!, pageSize: Int!): NodeListResponse!
-    ethFindContactByAddress(address: String!): NodeEntityResponse!
-    ethFindRiskScoreByAddress(address: String!): NodeEntityResponse!
+    ethFindMentionsByAddress(address: String!, page: Int!, pageSize: Int!): NodeListResponse! @auth(permissions: ["subscription.explorer.mentions"])
+    ethFindContactByAddress(address: String!): NodeEntityResponse! @auth(permissions: ["subscription.explorer.contacts"])
+    ethRisk(address: String!): RiskResponse! @auth(permissions: ["subscription.explorer.riskscore"])
+    ethSearch(query: String!, page: Int! = 0, limit: Int! = 100, wildcard: Boolean): SearchResponse! @auth(permissions: ["subscription.explorer.mentions"])
 }
 `, BuiltIn: false},
 	{Name: "../schema/health.graphqls", Input: `type Query {
@@ -2158,8 +3056,24 @@ type SearchCountResponse {
 }
 
 extend type Query {
-    search(query: String!, page: Int! = 0, limit: Int! = 100): SearchResponse! @auth(permissions: ["subscription"])
-    searchCount(query: String!): SearchCountResponse!
+    search(query: String!, page: Int! = 0, limit: Int! = 100, wildcard: Boolean!): SearchResponse! @auth(permissions: ["subscription.fulltext"])
+    searchCount(query: String!, wildcard: Boolean!): SearchCountResponse!
+}
+`, BuiltIn: false},
+	{Name: "../schema/tron.graphqls", Input: `extend type Query {
+    tronFindAddressByHash(address: String!): FindAddressByHashNodeResponse!
+    tronFindTransactionsByAddress(hash: String!, page: Int!, pageSize: Int!): NodeListResponse!
+    tronFindTransactionByHash(hash: String!): NodeEntityResponse!
+    tronFindIncomingTransactionAddress(hash: String!, page: Int!, pageSize: Int!): NodeListResponse!
+    tronFindOutcomingTransactionAddress(hash: String!, page: Int!, pageSize: Int!): NodeListResponse!
+    tronFindBlockByTransaction(hash: String!): NodeEntityResponse!
+    tronFindBlockByHeight(height: Int!): NodeEntityResponse!
+    tronFindTransactionsInBlock(height: Int!, page: Int!, pageSize: Int!): NodeListResponse!
+    tronFindBlockByHash(hash: String!): NodeEntityResponse!
+    tronFindMentionsByAddress(address: String!, page: Int!, pageSize: Int!): NodeListResponse! @auth(permissions: ["subscription.explorer.mentions"])
+    tronFindContactByAddress(address: String!): NodeEntityResponse! @auth(permissions: ["subscription.explorer.contacts"])
+    tronRisk(address: String!): RiskResponse! @auth(permissions: ["subscription.explorer.riskscore"])
+    tronSearch(query: String!, page: Int! = 0, limit: Int! = 100, wildcard: Boolean): SearchResponse! @auth(permissions: ["subscription.explorer.mentions"])
 }
 `, BuiltIn: false},
 	{Name: "../schema/user.graphqls", Input: `type User {
@@ -2437,24 +3351,15 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 func (ec *executionContext) field_Query_billingHistoryList_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 int
-	if tmp, ok := rawArgs["page"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("page"))
-		arg0, err = ec.unmarshalNInt2int(ctx, tmp)
+	var arg0 model.BillingHistoryListInput
+	if tmp, ok := rawArgs["filter"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
+		arg0, err = ec.unmarshalNBillingHistoryListInput2gitlabᚗcomᚋrubinᚑdevᚋapiᚋinternalᚋgraphᚋmodelᚐBillingHistoryListInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["page"] = arg0
-	var arg1 int
-	if tmp, ok := rawArgs["pageSize"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pageSize"))
-		arg1, err = ec.unmarshalNInt2int(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["pageSize"] = arg1
+	args["filter"] = arg0
 	return args, nil
 }
 
@@ -2482,33 +3387,48 @@ func (ec *executionContext) field_Query_billingKeyList_args(ctx context.Context,
 	return args, nil
 }
 
-func (ec *executionContext) field_Query_btcExistsAddressByHashCount_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Query_billingStatisticsRiskRange_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["address"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("address"))
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+	var arg0 model.BillingStatisticsRiskRangeInput
+	if tmp, ok := rawArgs["filter"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
+		arg0, err = ec.unmarshalNBillingStatisticsRiskRangeInput2gitlabᚗcomᚋrubinᚑdevᚋapiᚋinternalᚋgraphᚋmodelᚐBillingStatisticsRiskRangeInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["address"] = arg0
+	args["filter"] = arg0
 	return args, nil
 }
 
-func (ec *executionContext) field_Query_btcExistsTransactionByHashCount_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Query_billingStatisticsSummary_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["address"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("address"))
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+	var arg0 model.StatisticsSummaryInput
+	if tmp, ok := rawArgs["filter"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
+		arg0, err = ec.unmarshalNStatisticsSummaryInput2gitlabᚗcomᚋrubinᚑdevᚋapiᚋinternalᚋgraphᚋmodelᚐStatisticsSummaryInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["address"] = arg0
+	args["filter"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_billingStatistics_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 model.BillingStatisticsFilterInput
+	if tmp, ok := rawArgs["filter"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
+		arg0, err = ec.unmarshalNBillingStatisticsFilterInput2gitlabᚗcomᚋrubinᚑdevᚋapiᚋinternalᚋgraphᚋmodelᚐBillingStatisticsFilterInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["filter"] = arg0
 	return args, nil
 }
 
@@ -2524,39 +3444,6 @@ func (ec *executionContext) field_Query_btcFindAddressByHash_args(ctx context.Co
 		}
 	}
 	args["address"] = arg0
-	return args, nil
-}
-
-func (ec *executionContext) field_Query_btcFindAllInputAndOutputByTransaction_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["txid"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("txid"))
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["txid"] = arg0
-	var arg1 int
-	if tmp, ok := rawArgs["page"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("page"))
-		arg1, err = ec.unmarshalNInt2int(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["page"] = arg1
-	var arg2 int
-	if tmp, ok := rawArgs["pageSize"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pageSize"))
-		arg2, err = ec.unmarshalNInt2int(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["pageSize"] = arg2
 	return args, nil
 }
 
@@ -2716,21 +3603,6 @@ func (ec *executionContext) field_Query_btcFindOutcomingTransactions_args(ctx co
 		}
 	}
 	args["pageSize"] = arg2
-	return args, nil
-}
-
-func (ec *executionContext) field_Query_btcFindRiskScore_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["address"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("address"))
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["address"] = arg0
 	return args, nil
 }
 
@@ -2911,6 +3783,63 @@ func (ec *executionContext) field_Query_btcFindWalletForAddress_args(ctx context
 	return args, nil
 }
 
+func (ec *executionContext) field_Query_btcRisk_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["address"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("address"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["address"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_btcSearch_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["query"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("query"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["query"] = arg0
+	var arg1 int
+	if tmp, ok := rawArgs["page"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("page"))
+		arg1, err = ec.unmarshalNInt2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["page"] = arg1
+	var arg2 int
+	if tmp, ok := rawArgs["limit"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("limit"))
+		arg2, err = ec.unmarshalNInt2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["limit"] = arg2
+	var arg3 *bool
+	if tmp, ok := rawArgs["wildcard"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("wildcard"))
+		arg3, err = ec.unmarshalOBoolean2ᚖbool(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["wildcard"] = arg3
+	return args, nil
+}
+
 func (ec *executionContext) field_Query_categoryFindById_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -2918,6 +3847,21 @@ func (ec *executionContext) field_Query_categoryFindById_args(ctx context.Contex
 	if tmp, ok := rawArgs["id"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
 		arg0, err = ec.unmarshalNID2int64(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_categoryList_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *int64
+	if tmp, ok := rawArgs["id"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+		arg0, err = ec.unmarshalOID2ᚖint64(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -2941,39 +3885,6 @@ func (ec *executionContext) field_Query_ethFindAddressByHash_args(ctx context.Co
 	return args, nil
 }
 
-func (ec *executionContext) field_Query_ethFindAllInputAndOutputTransactions_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["hash"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hash"))
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["hash"] = arg0
-	var arg1 int
-	if tmp, ok := rawArgs["page"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("page"))
-		arg1, err = ec.unmarshalNInt2int(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["page"] = arg1
-	var arg2 int
-	if tmp, ok := rawArgs["pageSize"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pageSize"))
-		arg2, err = ec.unmarshalNInt2int(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["pageSize"] = arg2
-	return args, nil
-}
-
 func (ec *executionContext) field_Query_ethFindBlockByHash_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -2992,10 +3903,10 @@ func (ec *executionContext) field_Query_ethFindBlockByHash_args(ctx context.Cont
 func (ec *executionContext) field_Query_ethFindBlockByHeight_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 string
+	var arg0 int
 	if tmp, ok := rawArgs["height"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("height"))
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		arg0, err = ec.unmarshalNInt2int(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -3046,6 +3957,24 @@ func (ec *executionContext) field_Query_ethFindIncomingTransactionAddress_args(c
 		}
 	}
 	args["hash"] = arg0
+	var arg1 int
+	if tmp, ok := rawArgs["page"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("page"))
+		arg1, err = ec.unmarshalNInt2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["page"] = arg1
+	var arg2 int
+	if tmp, ok := rawArgs["pageSize"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pageSize"))
+		arg2, err = ec.unmarshalNInt2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["pageSize"] = arg2
 	return args, nil
 }
 
@@ -3094,21 +4023,24 @@ func (ec *executionContext) field_Query_ethFindOutcomingTransactionAddress_args(
 		}
 	}
 	args["hash"] = arg0
-	return args, nil
-}
-
-func (ec *executionContext) field_Query_ethFindRiskScoreByAddress_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["address"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("address"))
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+	var arg1 int
+	if tmp, ok := rawArgs["page"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("page"))
+		arg1, err = ec.unmarshalNInt2int(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["address"] = arg0
+	args["page"] = arg1
+	var arg2 int
+	if tmp, ok := rawArgs["pageSize"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pageSize"))
+		arg2, err = ec.unmarshalNInt2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["pageSize"] = arg2
 	return args, nil
 }
 
@@ -3163,10 +4095,10 @@ func (ec *executionContext) field_Query_ethFindTransactionsByAddress_args(ctx co
 func (ec *executionContext) field_Query_ethFindTransactionsInBlock_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 string
+	var arg0 int
 	if tmp, ok := rawArgs["height"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("height"))
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		arg0, err = ec.unmarshalNInt2int(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -3193,6 +4125,63 @@ func (ec *executionContext) field_Query_ethFindTransactionsInBlock_args(ctx cont
 	return args, nil
 }
 
+func (ec *executionContext) field_Query_ethRisk_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["address"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("address"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["address"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_ethSearch_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["query"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("query"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["query"] = arg0
+	var arg1 int
+	if tmp, ok := rawArgs["page"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("page"))
+		arg1, err = ec.unmarshalNInt2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["page"] = arg1
+	var arg2 int
+	if tmp, ok := rawArgs["limit"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("limit"))
+		arg2, err = ec.unmarshalNInt2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["limit"] = arg2
+	var arg3 *bool
+	if tmp, ok := rawArgs["wildcard"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("wildcard"))
+		arg3, err = ec.unmarshalOBoolean2ᚖbool(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["wildcard"] = arg3
+	return args, nil
+}
+
 func (ec *executionContext) field_Query_searchCount_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -3205,6 +4194,15 @@ func (ec *executionContext) field_Query_searchCount_args(ctx context.Context, ra
 		}
 	}
 	args["query"] = arg0
+	var arg1 bool
+	if tmp, ok := rawArgs["wildcard"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("wildcard"))
+		arg1, err = ec.unmarshalNBoolean2bool(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["wildcard"] = arg1
 	return args, nil
 }
 
@@ -3238,6 +4236,327 @@ func (ec *executionContext) field_Query_search_args(ctx context.Context, rawArgs
 		}
 	}
 	args["limit"] = arg2
+	var arg3 bool
+	if tmp, ok := rawArgs["wildcard"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("wildcard"))
+		arg3, err = ec.unmarshalNBoolean2bool(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["wildcard"] = arg3
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_tronFindAddressByHash_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["address"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("address"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["address"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_tronFindBlockByHash_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["hash"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hash"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["hash"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_tronFindBlockByHeight_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 int
+	if tmp, ok := rawArgs["height"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("height"))
+		arg0, err = ec.unmarshalNInt2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["height"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_tronFindBlockByTransaction_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["hash"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hash"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["hash"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_tronFindContactByAddress_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["address"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("address"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["address"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_tronFindIncomingTransactionAddress_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["hash"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hash"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["hash"] = arg0
+	var arg1 int
+	if tmp, ok := rawArgs["page"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("page"))
+		arg1, err = ec.unmarshalNInt2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["page"] = arg1
+	var arg2 int
+	if tmp, ok := rawArgs["pageSize"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pageSize"))
+		arg2, err = ec.unmarshalNInt2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["pageSize"] = arg2
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_tronFindMentionsByAddress_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["address"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("address"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["address"] = arg0
+	var arg1 int
+	if tmp, ok := rawArgs["page"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("page"))
+		arg1, err = ec.unmarshalNInt2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["page"] = arg1
+	var arg2 int
+	if tmp, ok := rawArgs["pageSize"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pageSize"))
+		arg2, err = ec.unmarshalNInt2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["pageSize"] = arg2
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_tronFindOutcomingTransactionAddress_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["hash"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hash"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["hash"] = arg0
+	var arg1 int
+	if tmp, ok := rawArgs["page"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("page"))
+		arg1, err = ec.unmarshalNInt2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["page"] = arg1
+	var arg2 int
+	if tmp, ok := rawArgs["pageSize"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pageSize"))
+		arg2, err = ec.unmarshalNInt2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["pageSize"] = arg2
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_tronFindTransactionByHash_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["hash"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hash"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["hash"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_tronFindTransactionsByAddress_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["hash"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hash"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["hash"] = arg0
+	var arg1 int
+	if tmp, ok := rawArgs["page"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("page"))
+		arg1, err = ec.unmarshalNInt2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["page"] = arg1
+	var arg2 int
+	if tmp, ok := rawArgs["pageSize"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pageSize"))
+		arg2, err = ec.unmarshalNInt2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["pageSize"] = arg2
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_tronFindTransactionsInBlock_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 int
+	if tmp, ok := rawArgs["height"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("height"))
+		arg0, err = ec.unmarshalNInt2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["height"] = arg0
+	var arg1 int
+	if tmp, ok := rawArgs["page"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("page"))
+		arg1, err = ec.unmarshalNInt2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["page"] = arg1
+	var arg2 int
+	if tmp, ok := rawArgs["pageSize"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pageSize"))
+		arg2, err = ec.unmarshalNInt2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["pageSize"] = arg2
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_tronRisk_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["address"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("address"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["address"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_tronSearch_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["query"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("query"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["query"] = arg0
+	var arg1 int
+	if tmp, ok := rawArgs["page"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("page"))
+		arg1, err = ec.unmarshalNInt2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["page"] = arg1
+	var arg2 int
+	if tmp, ok := rawArgs["limit"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("limit"))
+		arg2, err = ec.unmarshalNInt2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["limit"] = arg2
+	var arg3 *bool
+	if tmp, ok := rawArgs["wildcard"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("wildcard"))
+		arg3, err = ec.unmarshalOBoolean2ᚖbool(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["wildcard"] = arg3
 	return args, nil
 }
 
@@ -3627,8 +4946,14 @@ func (ec *executionContext) fieldContext_BillingHistoryListResponse_edge(ctx con
 				return ec.fieldContext_BillingRequest_query(ctx, field)
 			case "risk":
 				return ec.fieldContext_BillingRequest_risk(ctx, field)
-			case "category":
-				return ec.fieldContext_BillingRequest_category(ctx, field)
+			case "isCalculated":
+				return ec.fieldContext_BillingRequest_isCalculated(ctx, field)
+			case "isReported":
+				return ec.fieldContext_BillingRequest_isReported(ctx, field)
+			case "isWallet":
+				return ec.fieldContext_BillingRequest_isWallet(ctx, field)
+			case "categories":
+				return ec.fieldContext_BillingRequest_categories(ctx, field)
 			case "network":
 				return ec.fieldContext_BillingRequest_network(ctx, field)
 			case "createdAt":
@@ -4332,9 +5657,9 @@ func (ec *executionContext) _BillingRequest_risk(ctx context.Context, field grap
 		}
 		return graphql.Null
 	}
-	res := resTmp.(int)
+	res := resTmp.(float64)
 	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_BillingRequest_risk(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -4344,14 +5669,14 @@ func (ec *executionContext) fieldContext_BillingRequest_risk(ctx context.Context
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
+			return nil, errors.New("field of type Float does not have child fields")
 		},
 	}
 	return fc, nil
 }
 
-func (ec *executionContext) _BillingRequest_category(ctx context.Context, field graphql.CollectedField, obj *models.BillingRequest) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_BillingRequest_category(ctx, field)
+func (ec *executionContext) _BillingRequest_isCalculated(ctx context.Context, field graphql.CollectedField, obj *models.BillingRequest) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_BillingRequest_isCalculated(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -4364,7 +5689,7 @@ func (ec *executionContext) _BillingRequest_category(ctx context.Context, field 
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Category, nil
+		return obj.IsCalculated, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4376,19 +5701,175 @@ func (ec *executionContext) _BillingRequest_category(ctx context.Context, field 
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(bool)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_BillingRequest_category(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_BillingRequest_isCalculated(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "BillingRequest",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _BillingRequest_isReported(ctx context.Context, field graphql.CollectedField, obj *models.BillingRequest) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_BillingRequest_isReported(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.IsReported, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_BillingRequest_isReported(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BillingRequest",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _BillingRequest_isWallet(ctx context.Context, field graphql.CollectedField, obj *models.BillingRequest) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_BillingRequest_isWallet(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.IsWallet, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_BillingRequest_isWallet(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BillingRequest",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _BillingRequest_categories(ctx context.Context, field graphql.CollectedField, obj *models.BillingRequest) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_BillingRequest_categories(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.BillingRequest().Categories(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*models.BillingRisk)
+	fc.Result = res
+	return ec.marshalNBillingRisk2ᚕᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋpkgᚋmodelsᚐBillingRiskᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_BillingRequest_categories(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BillingRequest",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_BillingRisk_id(ctx, field)
+			case "risk":
+				return ec.fieldContext_BillingRisk_risk(ctx, field)
+			case "riskRaw":
+				return ec.fieldContext_BillingRisk_riskRaw(ctx, field)
+			case "percent":
+				return ec.fieldContext_BillingRisk_percent(ctx, field)
+			case "percentRaw":
+				return ec.fieldContext_BillingRisk_percentRaw(ctx, field)
+			case "isCalculated":
+				return ec.fieldContext_BillingRisk_isCalculated(ctx, field)
+			case "isReported":
+				return ec.fieldContext_BillingRisk_isReported(ctx, field)
+			case "isWallet":
+				return ec.fieldContext_BillingRisk_isWallet(ctx, field)
+			case "total":
+				return ec.fieldContext_BillingRisk_total(ctx, field)
+			case "directory":
+				return ec.fieldContext_BillingRisk_directory(ctx, field)
+			case "category":
+				return ec.fieldContext_BillingRisk_category(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type BillingRisk", field.Name)
 		},
 	}
 	return fc, nil
@@ -4482,6 +5963,1471 @@ func (ec *executionContext) fieldContext_BillingRequest_createdAt(ctx context.Co
 	return fc, nil
 }
 
+func (ec *executionContext) _BillingRisk_id(ctx context.Context, field graphql.CollectedField, obj *models.BillingRisk) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_BillingRisk_id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalNInt642int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_BillingRisk_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BillingRisk",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int64 does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _BillingRisk_risk(ctx context.Context, field graphql.CollectedField, obj *models.BillingRisk) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_BillingRisk_risk(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Risk, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_BillingRisk_risk(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BillingRisk",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _BillingRisk_riskRaw(ctx context.Context, field graphql.CollectedField, obj *models.BillingRisk) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_BillingRisk_riskRaw(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RiskRaw, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_BillingRisk_riskRaw(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BillingRisk",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _BillingRisk_percent(ctx context.Context, field graphql.CollectedField, obj *models.BillingRisk) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_BillingRisk_percent(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Percent, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_BillingRisk_percent(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BillingRisk",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _BillingRisk_percentRaw(ctx context.Context, field graphql.CollectedField, obj *models.BillingRisk) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_BillingRisk_percentRaw(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PercentRaw, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_BillingRisk_percentRaw(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BillingRisk",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _BillingRisk_isCalculated(ctx context.Context, field graphql.CollectedField, obj *models.BillingRisk) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_BillingRisk_isCalculated(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.IsCalculated, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_BillingRisk_isCalculated(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BillingRisk",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _BillingRisk_isReported(ctx context.Context, field graphql.CollectedField, obj *models.BillingRisk) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_BillingRisk_isReported(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.IsReported, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_BillingRisk_isReported(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BillingRisk",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _BillingRisk_isWallet(ctx context.Context, field graphql.CollectedField, obj *models.BillingRisk) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_BillingRisk_isWallet(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.IsWallet, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_BillingRisk_isWallet(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BillingRisk",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _BillingRisk_total(ctx context.Context, field graphql.CollectedField, obj *models.BillingRisk) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_BillingRisk_total(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Total, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_BillingRisk_total(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BillingRisk",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _BillingRisk_directory(ctx context.Context, field graphql.CollectedField, obj *models.BillingRisk) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_BillingRisk_directory(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.BillingRisk().Directory(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*models.CategoryGroup)
+	fc.Result = res
+	return ec.marshalNCategoryGroup2ᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋpkgᚋmodelsᚐCategoryGroup(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_BillingRisk_directory(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BillingRisk",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_CategoryGroup_id(ctx, field)
+			case "nameRu":
+				return ec.fieldContext_CategoryGroup_nameRu(ctx, field)
+			case "nameEn":
+				return ec.fieldContext_CategoryGroup_nameEn(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type CategoryGroup", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _BillingRisk_category(ctx context.Context, field graphql.CollectedField, obj *models.BillingRisk) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_BillingRisk_category(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.BillingRisk().Category(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*models.Category)
+	fc.Result = res
+	return ec.marshalOCategory2ᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋpkgᚋmodelsᚐCategory(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_BillingRisk_category(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BillingRisk",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Category_id(ctx, field)
+			case "number":
+				return ec.fieldContext_Category_number(ctx, field)
+			case "name":
+				return ec.fieldContext_Category_name(ctx, field)
+			case "descriptionRu":
+				return ec.fieldContext_Category_descriptionRu(ctx, field)
+			case "descriptionEn":
+				return ec.fieldContext_Category_descriptionEn(ctx, field)
+			case "risk":
+				return ec.fieldContext_Category_risk(ctx, field)
+			case "categoryGroup":
+				return ec.fieldContext_Category_categoryGroup(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Category", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _BillingStatisticsBlockchain_total(ctx context.Context, field graphql.CollectedField, obj *models.BillingStatisticsBlockchain) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_BillingStatisticsBlockchain_total(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Total, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalNInt642int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_BillingStatisticsBlockchain_total(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BillingStatisticsBlockchain",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int64 does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _BillingStatisticsBlockchain_categories(ctx context.Context, field graphql.CollectedField, obj *models.BillingStatisticsBlockchain) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_BillingStatisticsBlockchain_categories(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.BillingStatisticsBlockchain().Categories(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*models.BillingStatisticsCategory)
+	fc.Result = res
+	return ec.marshalNBillingStatisticsCategory2ᚕᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋpkgᚋmodelsᚐBillingStatisticsCategoryᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_BillingStatisticsBlockchain_categories(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BillingStatisticsBlockchain",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "number":
+				return ec.fieldContext_BillingStatisticsCategory_number(ctx, field)
+			case "name":
+				return ec.fieldContext_BillingStatisticsCategory_name(ctx, field)
+			case "risk":
+				return ec.fieldContext_BillingStatisticsCategory_risk(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type BillingStatisticsCategory", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _BillingStatisticsCategory_number(ctx context.Context, field graphql.CollectedField, obj *models.BillingStatisticsCategory) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_BillingStatisticsCategory_number(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.BillingStatisticsCategory().Number(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_BillingStatisticsCategory_number(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BillingStatisticsCategory",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _BillingStatisticsCategory_name(ctx context.Context, field graphql.CollectedField, obj *models.BillingStatisticsCategory) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_BillingStatisticsCategory_name(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_BillingStatisticsCategory_name(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BillingStatisticsCategory",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _BillingStatisticsCategory_risk(ctx context.Context, field graphql.CollectedField, obj *models.BillingStatisticsCategory) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_BillingStatisticsCategory_risk(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Risk, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_BillingStatisticsCategory_risk(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BillingStatisticsCategory",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _BillingStatisticsResponse_errors(ctx context.Context, field graphql.CollectedField, obj *model.BillingStatisticsResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_BillingStatisticsResponse_errors(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Errors, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(interface{})
+	fc.Result = res
+	return ec.marshalOAny2interface(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_BillingStatisticsResponse_errors(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BillingStatisticsResponse",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Any does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _BillingStatisticsResponse_stats(ctx context.Context, field graphql.CollectedField, obj *model.BillingStatisticsResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_BillingStatisticsResponse_stats(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Stats, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*models.BillingStatisticsBlockchain)
+	fc.Result = res
+	return ec.marshalNBillingStatisticsBlockchain2ᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋpkgᚋmodelsᚐBillingStatisticsBlockchain(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_BillingStatisticsResponse_stats(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BillingStatisticsResponse",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "total":
+				return ec.fieldContext_BillingStatisticsBlockchain_total(ctx, field)
+			case "categories":
+				return ec.fieldContext_BillingStatisticsBlockchain_categories(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type BillingStatisticsBlockchain", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _BillingStatisticsRisk_name(ctx context.Context, field graphql.CollectedField, obj *models.BillingStatisticsRisk) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_BillingStatisticsRisk_name(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_BillingStatisticsRisk_name(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BillingStatisticsRisk",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _BillingStatisticsRisk_total(ctx context.Context, field graphql.CollectedField, obj *models.BillingStatisticsRisk) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_BillingStatisticsRisk_total(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Total, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalNInt642int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_BillingStatisticsRisk_total(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BillingStatisticsRisk",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int64 does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _BillingStatisticsSummaryResponse_errors(ctx context.Context, field graphql.CollectedField, obj *model.BillingStatisticsSummaryResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_BillingStatisticsSummaryResponse_errors(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Errors, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(interface{})
+	fc.Result = res
+	return ec.marshalOAny2interface(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_BillingStatisticsSummaryResponse_errors(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BillingStatisticsSummaryResponse",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Any does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _BillingStatisticsSummaryResponse_items(ctx context.Context, field graphql.CollectedField, obj *model.BillingStatisticsSummaryResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_BillingStatisticsSummaryResponse_items(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Items, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*models.StatisticsSummary)
+	fc.Result = res
+	return ec.marshalNStatisticsSummary2ᚕᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋpkgᚋmodelsᚐStatisticsSummaryᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_BillingStatisticsSummaryResponse_items(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "BillingStatisticsSummaryResponse",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "network":
+				return ec.fieldContext_StatisticsSummary_network(ctx, field)
+			case "total":
+				return ec.fieldContext_StatisticsSummary_total(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type StatisticsSummary", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CalculateItem_id(ctx context.Context, field graphql.CollectedField, obj *neo4jstore.CalculateItem) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CalculateItem_id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNID2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CalculateItem_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CalculateItem",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CalculateItem_total(ctx context.Context, field graphql.CollectedField, obj *neo4jstore.CalculateItem) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CalculateItem_total(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Total, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CalculateItem_total(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CalculateItem",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CalculateItem_percent(ctx context.Context, field graphql.CollectedField, obj *neo4jstore.CalculateItem) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CalculateItem_percent(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Percent, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CalculateItem_percent(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CalculateItem",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CalculateItem_percent_raw(ctx context.Context, field graphql.CollectedField, obj *neo4jstore.CalculateItem) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CalculateItem_percent_raw(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PercentRaw, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CalculateItem_percent_raw(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CalculateItem",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CalculateItem_risk(ctx context.Context, field graphql.CollectedField, obj *neo4jstore.CalculateItem) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CalculateItem_risk(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Risk, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CalculateItem_risk(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CalculateItem",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CalculateItem_risk_raw(ctx context.Context, field graphql.CollectedField, obj *neo4jstore.CalculateItem) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CalculateItem_risk_raw(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RiskRaw, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CalculateItem_risk_raw(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CalculateItem",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CalculateItem_i18n(ctx context.Context, field graphql.CollectedField, obj *neo4jstore.CalculateItem) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CalculateItem_i18n(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.I18n, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(neo4jstore.DirectoryI18n)
+	fc.Result = res
+	return ec.marshalNDirectoryI18n2gitlabᚗcomᚋrubinᚑdevᚋapiᚋpkgᚋneo4jstoreᚐDirectoryI18n(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CalculateItem_i18n(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CalculateItem",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "ru":
+				return ec.fieldContext_DirectoryI18n_ru(ctx, field)
+			case "en":
+				return ec.fieldContext_DirectoryI18n_en(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type DirectoryI18n", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CalculatedRisk_total(ctx context.Context, field graphql.CollectedField, obj *neo4jstore.CalculatedRisk) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CalculatedRisk_total(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Total, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CalculatedRisk_total(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CalculatedRisk",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CalculatedRisk_risk(ctx context.Context, field graphql.CollectedField, obj *neo4jstore.CalculatedRisk) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CalculatedRisk_risk(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Risk, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CalculatedRisk_risk(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CalculatedRisk",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CalculatedRisk_items(ctx context.Context, field graphql.CollectedField, obj *neo4jstore.CalculatedRisk) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CalculatedRisk_items(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.CalculatedRisk().Items(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*neo4jstore.CalculateItem)
+	fc.Result = res
+	return ec.marshalNCalculateItem2ᚕᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋpkgᚋneo4jstoreᚐCalculateItemᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CalculatedRisk_items(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CalculatedRisk",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_CalculateItem_id(ctx, field)
+			case "total":
+				return ec.fieldContext_CalculateItem_total(ctx, field)
+			case "percent":
+				return ec.fieldContext_CalculateItem_percent(ctx, field)
+			case "percent_raw":
+				return ec.fieldContext_CalculateItem_percent_raw(ctx, field)
+			case "risk":
+				return ec.fieldContext_CalculateItem_risk(ctx, field)
+			case "risk_raw":
+				return ec.fieldContext_CalculateItem_risk_raw(ctx, field)
+			case "i18n":
+				return ec.fieldContext_CalculateItem_i18n(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type CalculateItem", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Category_id(ctx context.Context, field graphql.CollectedField, obj *models.Category) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Category_id(ctx, field)
 	if err != nil {
@@ -4521,6 +7467,50 @@ func (ec *executionContext) fieldContext_Category_id(ctx context.Context, field 
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Category_number(ctx context.Context, field graphql.CollectedField, obj *models.Category) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Category_number(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Number, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Category_number(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Category",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
 		},
 	}
 	return fc, nil
@@ -4702,6 +7692,55 @@ func (ec *executionContext) fieldContext_Category_risk(ctx context.Context, fiel
 	return fc, nil
 }
 
+func (ec *executionContext) _Category_categoryGroup(ctx context.Context, field graphql.CollectedField, obj *models.Category) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Category_categoryGroup(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Category().CategoryGroup(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*models.CategoryGroup)
+	fc.Result = res
+	return ec.marshalOCategoryGroup2ᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋpkgᚋmodelsᚐCategoryGroup(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Category_categoryGroup(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Category",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_CategoryGroup_id(ctx, field)
+			case "nameRu":
+				return ec.fieldContext_CategoryGroup_nameRu(ctx, field)
+			case "nameEn":
+				return ec.fieldContext_CategoryGroup_nameEn(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type CategoryGroup", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _CategoryCreateResponse_errors(ctx context.Context, field graphql.CollectedField, obj *model.CategoryCreateResponse) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_CategoryCreateResponse_errors(ctx, field)
 	if err != nil {
@@ -4781,6 +7820,8 @@ func (ec *executionContext) fieldContext_CategoryCreateResponse_category(ctx con
 			switch field.Name {
 			case "id":
 				return ec.fieldContext_Category_id(ctx, field)
+			case "number":
+				return ec.fieldContext_Category_number(ctx, field)
 			case "name":
 				return ec.fieldContext_Category_name(ctx, field)
 			case "descriptionRu":
@@ -4789,8 +7830,142 @@ func (ec *executionContext) fieldContext_CategoryCreateResponse_category(ctx con
 				return ec.fieldContext_Category_descriptionEn(ctx, field)
 			case "risk":
 				return ec.fieldContext_Category_risk(ctx, field)
+			case "categoryGroup":
+				return ec.fieldContext_Category_categoryGroup(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Category", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CategoryGroup_id(ctx context.Context, field graphql.CollectedField, obj *models.CategoryGroup) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CategoryGroup_id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CategoryGroup_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CategoryGroup",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CategoryGroup_nameRu(ctx context.Context, field graphql.CollectedField, obj *models.CategoryGroup) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CategoryGroup_nameRu(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.NameRu, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CategoryGroup_nameRu(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CategoryGroup",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CategoryGroup_nameEn(ctx context.Context, field graphql.CollectedField, obj *models.CategoryGroup) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CategoryGroup_nameEn(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.NameEn, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CategoryGroup_nameEn(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CategoryGroup",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -4837,47 +8012,6 @@ func (ec *executionContext) fieldContext_CategoryListResponse_errors(ctx context
 	return fc, nil
 }
 
-func (ec *executionContext) _CategoryListResponse_total(ctx context.Context, field graphql.CollectedField, obj *model.CategoryListResponse) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_CategoryListResponse_total(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Total, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*int)
-	fc.Result = res
-	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_CategoryListResponse_total(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "CategoryListResponse",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _CategoryListResponse_edge(ctx context.Context, field graphql.CollectedField, obj *model.CategoryListResponse) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_CategoryListResponse_edge(ctx, field)
 	if err != nil {
@@ -4919,6 +8053,8 @@ func (ec *executionContext) fieldContext_CategoryListResponse_edge(ctx context.C
 			switch field.Name {
 			case "id":
 				return ec.fieldContext_Category_id(ctx, field)
+			case "number":
+				return ec.fieldContext_Category_number(ctx, field)
 			case "name":
 				return ec.fieldContext_Category_name(ctx, field)
 			case "descriptionRu":
@@ -4927,6 +8063,8 @@ func (ec *executionContext) fieldContext_CategoryListResponse_edge(ctx context.C
 				return ec.fieldContext_Category_descriptionEn(ctx, field)
 			case "risk":
 				return ec.fieldContext_Category_risk(ctx, field)
+			case "categoryGroup":
+				return ec.fieldContext_Category_categoryGroup(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Category", field.Name)
 		},
@@ -5054,6 +8192,8 @@ func (ec *executionContext) fieldContext_CategoryUpdateResponse_category(ctx con
 			switch field.Name {
 			case "id":
 				return ec.fieldContext_Category_id(ctx, field)
+			case "number":
+				return ec.fieldContext_Category_number(ctx, field)
 			case "name":
 				return ec.fieldContext_Category_name(ctx, field)
 			case "descriptionRu":
@@ -5062,6 +8202,8 @@ func (ec *executionContext) fieldContext_CategoryUpdateResponse_category(ctx con
 				return ec.fieldContext_Category_descriptionEn(ctx, field)
 			case "risk":
 				return ec.fieldContext_Category_risk(ctx, field)
+			case "categoryGroup":
+				return ec.fieldContext_Category_categoryGroup(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Category", field.Name)
 		},
@@ -5156,6 +8298,94 @@ func (ec *executionContext) fieldContext_ChangePasswordResponse_errors(ctx conte
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Any does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DirectoryI18n_ru(ctx context.Context, field graphql.CollectedField, obj *neo4jstore.DirectoryI18n) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DirectoryI18n_ru(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Ru, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DirectoryI18n_ru(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DirectoryI18n",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DirectoryI18n_en(ctx context.Context, field graphql.CollectedField, obj *neo4jstore.DirectoryI18n) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DirectoryI18n_en(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.En, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DirectoryI18n_en(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DirectoryI18n",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -5420,6 +8650,182 @@ func (ec *executionContext) fieldContext_Entity_data(ctx context.Context, field 
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Any does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _FindAddressByHashNode_total(ctx context.Context, field graphql.CollectedField, obj *neo4jstore.FindAddressByHashNode) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_FindAddressByHashNode_total(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Total, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_FindAddressByHashNode_total(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "FindAddressByHashNode",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _FindAddressByHashNode_address(ctx context.Context, field graphql.CollectedField, obj *neo4jstore.FindAddressByHashNode) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_FindAddressByHashNode_address(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Address, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_FindAddressByHashNode_address(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "FindAddressByHashNode",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _FindAddressByHashNodeResponse_errors(ctx context.Context, field graphql.CollectedField, obj *model.FindAddressByHashNodeResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_FindAddressByHashNodeResponse_errors(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Errors, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(interface{})
+	fc.Result = res
+	return ec.marshalOAny2interface(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_FindAddressByHashNodeResponse_errors(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "FindAddressByHashNodeResponse",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Any does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _FindAddressByHashNodeResponse_node(ctx context.Context, field graphql.CollectedField, obj *model.FindAddressByHashNodeResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_FindAddressByHashNodeResponse_node(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Node, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*neo4jstore.FindAddressByHashNode)
+	fc.Result = res
+	return ec.marshalOFindAddressByHashNode2ᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋpkgᚋneo4jstoreᚐFindAddressByHashNode(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_FindAddressByHashNodeResponse_node(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "FindAddressByHashNodeResponse",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "total":
+				return ec.fieldContext_FindAddressByHashNode_total(ctx, field)
+			case "address":
+				return ec.fieldContext_FindAddressByHashNode_address(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type FindAddressByHashNode", field.Name)
 		},
 	}
 	return fc, nil
@@ -6795,7 +10201,7 @@ func (ec *executionContext) fieldContext_Mutation_categoryRemoveById(ctx context
 	return fc, nil
 }
 
-func (ec *executionContext) _Node_id(ctx context.Context, field graphql.CollectedField, obj *neoutils.Node) (ret graphql.Marshaler) {
+func (ec *executionContext) _Node_id(ctx context.Context, field graphql.CollectedField, obj *neo4jstore.Node) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Node_id(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -6839,7 +10245,7 @@ func (ec *executionContext) fieldContext_Node_id(ctx context.Context, field grap
 	return fc, nil
 }
 
-func (ec *executionContext) _Node_labels(ctx context.Context, field graphql.CollectedField, obj *neoutils.Node) (ret graphql.Marshaler) {
+func (ec *executionContext) _Node_labels(ctx context.Context, field graphql.CollectedField, obj *neo4jstore.Node) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Node_labels(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -6883,7 +10289,7 @@ func (ec *executionContext) fieldContext_Node_labels(ctx context.Context, field 
 	return fc, nil
 }
 
-func (ec *executionContext) _Node_props(ctx context.Context, field graphql.CollectedField, obj *neoutils.Node) (ret graphql.Marshaler) {
+func (ec *executionContext) _Node_props(ctx context.Context, field graphql.CollectedField, obj *neo4jstore.Node) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Node_props(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -7070,9 +10476,9 @@ func (ec *executionContext) _NodeEntityResponse_node(ctx context.Context, field 
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*neoutils.Node)
+	res := resTmp.(*neo4jstore.Node)
 	fc.Result = res
-	return ec.marshalONode2ᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋpkgᚋneoutilsᚐNode(ctx, field.Selections, res)
+	return ec.marshalONode2ᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋpkgᚋneo4jstoreᚐNode(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_NodeEntityResponse_node(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -7204,9 +10610,9 @@ func (ec *executionContext) _NodeListResponse_edge(ctx context.Context, field gr
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*neoutils.Node)
+	res := resTmp.([]*neo4jstore.Node)
 	fc.Result = res
-	return ec.marshalNNode2ᚕᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋpkgᚋneoutilsᚐNodeᚄ(ctx, field.Selections, res)
+	return ec.marshalNNode2ᚕᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋpkgᚋneo4jstoreᚐNodeᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_NodeListResponse_edge(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -7503,7 +10909,7 @@ func (ec *executionContext) _Query_billingHistoryList(ctx context.Context, field
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Query().BillingHistoryList(rctx, fc.Args["page"].(int), fc.Args["pageSize"].(int))
+			return ec.resolvers.Query().BillingHistoryList(rctx, fc.Args["filter"].(model.BillingHistoryListInput))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			if ec.directives.Auth == nil {
@@ -7565,6 +10971,243 @@ func (ec *executionContext) fieldContext_Query_billingHistoryList(ctx context.Co
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query_billingHistoryList_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_billingStatistics(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_billingStatistics(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Query().BillingStatistics(rctx, fc.Args["filter"].(model.BillingStatisticsFilterInput))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.Auth == nil {
+				return nil, errors.New("directive auth is not implemented")
+			}
+			return ec.directives.Auth(ctx, nil, directive0, nil)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*model.BillingStatisticsResponse); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *gitlab.com/rubin-dev/api/internal/graph/model.BillingStatisticsResponse`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.BillingStatisticsResponse)
+	fc.Result = res
+	return ec.marshalNBillingStatisticsResponse2ᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋinternalᚋgraphᚋmodelᚐBillingStatisticsResponse(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_billingStatistics(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "errors":
+				return ec.fieldContext_BillingStatisticsResponse_errors(ctx, field)
+			case "stats":
+				return ec.fieldContext_BillingStatisticsResponse_stats(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type BillingStatisticsResponse", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_billingStatistics_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_billingStatisticsSummary(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_billingStatisticsSummary(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Query().BillingStatisticsSummary(rctx, fc.Args["filter"].(model.StatisticsSummaryInput))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.Auth == nil {
+				return nil, errors.New("directive auth is not implemented")
+			}
+			return ec.directives.Auth(ctx, nil, directive0, nil)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*model.BillingStatisticsSummaryResponse); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *gitlab.com/rubin-dev/api/internal/graph/model.BillingStatisticsSummaryResponse`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.BillingStatisticsSummaryResponse)
+	fc.Result = res
+	return ec.marshalNBillingStatisticsSummaryResponse2ᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋinternalᚋgraphᚋmodelᚐBillingStatisticsSummaryResponse(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_billingStatisticsSummary(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "errors":
+				return ec.fieldContext_BillingStatisticsSummaryResponse_errors(ctx, field)
+			case "items":
+				return ec.fieldContext_BillingStatisticsSummaryResponse_items(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type BillingStatisticsSummaryResponse", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_billingStatisticsSummary_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_billingStatisticsRiskRange(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_billingStatisticsRiskRange(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Query().BillingStatisticsRiskRange(rctx, fc.Args["filter"].(model.BillingStatisticsRiskRangeInput))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.Auth == nil {
+				return nil, errors.New("directive auth is not implemented")
+			}
+			return ec.directives.Auth(ctx, nil, directive0, nil)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.([]int); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be []int`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]int)
+	fc.Result = res
+	return ec.marshalNInt2ᚕintᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_billingStatisticsRiskRange(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_billingStatisticsRiskRange_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return
 	}
@@ -7654,128 +11297,6 @@ func (ec *executionContext) fieldContext_Query_billingKeyList(ctx context.Contex
 	return fc, nil
 }
 
-func (ec *executionContext) _Query_btcExistsAddressByHashCount(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_btcExistsAddressByHashCount(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().BtcExistsAddressByHashCount(rctx, fc.Args["address"].(string))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*model.NodeCountResponse)
-	fc.Result = res
-	return ec.marshalNNodeCountResponse2ᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋinternalᚋgraphᚋmodelᚐNodeCountResponse(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Query_btcExistsAddressByHashCount(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Query",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "errors":
-				return ec.fieldContext_NodeCountResponse_errors(ctx, field)
-			case "has":
-				return ec.fieldContext_NodeCountResponse_has(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type NodeCountResponse", field.Name)
-		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Query_btcExistsAddressByHashCount_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Query_btcExistsTransactionByHashCount(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_btcExistsTransactionByHashCount(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().BtcExistsTransactionByHashCount(rctx, fc.Args["address"].(string))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*model.NodeCountResponse)
-	fc.Result = res
-	return ec.marshalNNodeCountResponse2ᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋinternalᚋgraphᚋmodelᚐNodeCountResponse(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Query_btcExistsTransactionByHashCount(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Query",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "errors":
-				return ec.fieldContext_NodeCountResponse_errors(ctx, field)
-			case "has":
-				return ec.fieldContext_NodeCountResponse_has(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type NodeCountResponse", field.Name)
-		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Query_btcExistsTransactionByHashCount_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _Query_btcFindContactByAddress(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query_btcFindContactByAddress(ctx, field)
 	if err != nil {
@@ -7789,8 +11310,32 @@ func (ec *executionContext) _Query_btcFindContactByAddress(ctx context.Context, 
 		}
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().BtcFindContactByAddress(rctx, fc.Args["address"].(string))
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Query().BtcFindContactByAddress(rctx, fc.Args["address"].(string))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			permissions, err := ec.unmarshalOString2ᚕstringᚄ(ctx, []interface{}{"subscription.explorer.contacts"})
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.Auth == nil {
+				return nil, errors.New("directive auth is not implemented")
+			}
+			return ec.directives.Auth(ctx, nil, directive0, permissions)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*model.NodeEntityResponse); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *gitlab.com/rubin-dev/api/internal/graph/model.NodeEntityResponse`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -7924,9 +11469,9 @@ func (ec *executionContext) _Query_btcFindAddressByHash(ctx context.Context, fie
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.NodeEntityResponse)
+	res := resTmp.(*model.FindAddressByHashNodeResponse)
 	fc.Result = res
-	return ec.marshalNNodeEntityResponse2ᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋinternalᚋgraphᚋmodelᚐNodeEntityResponse(ctx, field.Selections, res)
+	return ec.marshalNFindAddressByHashNodeResponse2ᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋinternalᚋgraphᚋmodelᚐFindAddressByHashNodeResponse(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Query_btcFindAddressByHash(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -7938,11 +11483,11 @@ func (ec *executionContext) fieldContext_Query_btcFindAddressByHash(ctx context.
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "errors":
-				return ec.fieldContext_NodeEntityResponse_errors(ctx, field)
+				return ec.fieldContext_FindAddressByHashNodeResponse_errors(ctx, field)
 			case "node":
-				return ec.fieldContext_NodeEntityResponse_node(ctx, field)
+				return ec.fieldContext_FindAddressByHashNodeResponse_node(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type NodeEntityResponse", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type FindAddressByHashNodeResponse", field.Name)
 		},
 	}
 	defer func() {
@@ -8020,8 +11565,8 @@ func (ec *executionContext) fieldContext_Query_btcFindWalletForAddress(ctx conte
 	return fc, nil
 }
 
-func (ec *executionContext) _Query_btcFindRiskScore(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_btcFindRiskScore(ctx, field)
+func (ec *executionContext) _Query_btcRisk(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_btcRisk(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -8033,8 +11578,32 @@ func (ec *executionContext) _Query_btcFindRiskScore(ctx context.Context, field g
 		}
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().BtcFindRiskScore(rctx, fc.Args["address"].(string))
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Query().BtcRisk(rctx, fc.Args["address"].(string))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			permissions, err := ec.unmarshalOString2ᚕstringᚄ(ctx, []interface{}{"subscription.explorer.riskscore"})
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.Auth == nil {
+				return nil, errors.New("directive auth is not implemented")
+			}
+			return ec.directives.Auth(ctx, nil, directive0, permissions)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*model.RiskResponse); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *gitlab.com/rubin-dev/api/internal/graph/model.RiskResponse`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -8046,12 +11615,12 @@ func (ec *executionContext) _Query_btcFindRiskScore(ctx context.Context, field g
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.NodeEntityResponse)
+	res := resTmp.(*model.RiskResponse)
 	fc.Result = res
-	return ec.marshalNNodeEntityResponse2ᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋinternalᚋgraphᚋmodelᚐNodeEntityResponse(ctx, field.Selections, res)
+	return ec.marshalNRiskResponse2ᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋinternalᚋgraphᚋmodelᚐRiskResponse(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Query_btcFindRiskScore(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Query_btcRisk(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Query",
 		Field:      field,
@@ -8060,11 +11629,11 @@ func (ec *executionContext) fieldContext_Query_btcFindRiskScore(ctx context.Cont
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "errors":
-				return ec.fieldContext_NodeEntityResponse_errors(ctx, field)
-			case "node":
-				return ec.fieldContext_NodeEntityResponse_node(ctx, field)
+				return ec.fieldContext_RiskResponse_errors(ctx, field)
+			case "risk":
+				return ec.fieldContext_RiskResponse_risk(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type NodeEntityResponse", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type RiskResponse", field.Name)
 		},
 	}
 	defer func() {
@@ -8074,7 +11643,7 @@ func (ec *executionContext) fieldContext_Query_btcFindRiskScore(ctx context.Cont
 		}
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Query_btcFindRiskScore_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+	if fc.Args, err = ec.field_Query_btcRisk_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return
 	}
@@ -8340,8 +11909,32 @@ func (ec *executionContext) _Query_btcFindMentionsForAddress(ctx context.Context
 		}
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().BtcFindMentionsForAddress(rctx, fc.Args["address"].(string), fc.Args["page"].(int), fc.Args["pageSize"].(int))
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Query().BtcFindMentionsForAddress(rctx, fc.Args["address"].(string), fc.Args["page"].(int), fc.Args["pageSize"].(int))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			permissions, err := ec.unmarshalOString2ᚕstringᚄ(ctx, []interface{}{"subscription.explorer.mentions"})
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.Auth == nil {
+				return nil, errors.New("directive auth is not implemented")
+			}
+			return ec.directives.Auth(ctx, nil, directive0, permissions)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*model.NodeListResponse); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *gitlab.com/rubin-dev/api/internal/graph/model.NodeListResponse`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -8579,69 +12172,6 @@ func (ec *executionContext) fieldContext_Query_btcFindTransactionsInBlock(ctx co
 	return fc, nil
 }
 
-func (ec *executionContext) _Query_btcFindAllInputAndOutputByTransaction(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_btcFindAllInputAndOutputByTransaction(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().BtcFindAllInputAndOutputByTransaction(rctx, fc.Args["txid"].(string), fc.Args["page"].(int), fc.Args["pageSize"].(int))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*model.NodeListResponse)
-	fc.Result = res
-	return ec.marshalNNodeListResponse2ᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋinternalᚋgraphᚋmodelᚐNodeListResponse(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Query_btcFindAllInputAndOutputByTransaction(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Query",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "errors":
-				return ec.fieldContext_NodeListResponse_errors(ctx, field)
-			case "total":
-				return ec.fieldContext_NodeListResponse_total(ctx, field)
-			case "edge":
-				return ec.fieldContext_NodeListResponse_edge(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type NodeListResponse", field.Name)
-		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Query_btcFindAllInputAndOutputByTransaction_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _Query_btcFindTransactionsInBlockByHash(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query_btcFindTransactionsInBlockByHash(ctx, field)
 	if err != nil {
@@ -8829,8 +12359,8 @@ func (ec *executionContext) fieldContext_Query_btcFindWalletAddresses(ctx contex
 	return fc, nil
 }
 
-func (ec *executionContext) _Query_categoryList(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_categoryList(ctx, field)
+func (ec *executionContext) _Query_btcSearch(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_btcSearch(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -8844,10 +12374,10 @@ func (ec *executionContext) _Query_categoryList(ctx context.Context, field graph
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Query().CategoryList(rctx)
+			return ec.resolvers.Query().BtcSearch(rctx, fc.Args["query"].(string), fc.Args["page"].(int), fc.Args["limit"].(int), fc.Args["wildcard"].(*bool))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
-			permissions, err := ec.unmarshalOString2ᚕstringᚄ(ctx, []interface{}{"category"})
+			permissions, err := ec.unmarshalOString2ᚕstringᚄ(ctx, []interface{}{"subscription.explorer.mentions"})
 			if err != nil {
 				return nil, err
 			}
@@ -8864,10 +12394,73 @@ func (ec *executionContext) _Query_categoryList(ctx context.Context, field graph
 		if tmp == nil {
 			return nil, nil
 		}
-		if data, ok := tmp.(*model.CategoryListResponse); ok {
+		if data, ok := tmp.(*model.SearchResponse); ok {
 			return data, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be *gitlab.com/rubin-dev/api/internal/graph/model.CategoryListResponse`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *gitlab.com/rubin-dev/api/internal/graph/model.SearchResponse`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.SearchResponse)
+	fc.Result = res
+	return ec.marshalNSearchResponse2ᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋinternalᚋgraphᚋmodelᚐSearchResponse(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_btcSearch(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "errors":
+				return ec.fieldContext_SearchResponse_errors(ctx, field)
+			case "total":
+				return ec.fieldContext_SearchResponse_total(ctx, field)
+			case "edge":
+				return ec.fieldContext_SearchResponse_edge(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type SearchResponse", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_btcSearch_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_categoryList(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_categoryList(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().CategoryList(rctx, fc.Args["id"].(*int64))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -8894,8 +12487,67 @@ func (ec *executionContext) fieldContext_Query_categoryList(ctx context.Context,
 			switch field.Name {
 			case "errors":
 				return ec.fieldContext_CategoryListResponse_errors(ctx, field)
-			case "total":
-				return ec.fieldContext_CategoryListResponse_total(ctx, field)
+			case "edge":
+				return ec.fieldContext_CategoryListResponse_edge(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type CategoryListResponse", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_categoryList_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_categoryAllList(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_categoryAllList(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().CategoryAllList(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.CategoryListResponse)
+	fc.Result = res
+	return ec.marshalNCategoryListResponse2ᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋinternalᚋgraphᚋmodelᚐCategoryListResponse(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_categoryAllList(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "errors":
+				return ec.fieldContext_CategoryListResponse_errors(ctx, field)
 			case "edge":
 				return ec.fieldContext_CategoryListResponse_edge(ctx, field)
 			}
@@ -8918,32 +12570,8 @@ func (ec *executionContext) _Query_categoryFindById(ctx context.Context, field g
 		}
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		directive0 := func(rctx context.Context) (interface{}, error) {
-			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Query().CategoryFindByID(rctx, fc.Args["id"].(int64))
-		}
-		directive1 := func(ctx context.Context) (interface{}, error) {
-			permissions, err := ec.unmarshalOString2ᚕstringᚄ(ctx, []interface{}{"category"})
-			if err != nil {
-				return nil, err
-			}
-			if ec.directives.Auth == nil {
-				return nil, errors.New("directive auth is not implemented")
-			}
-			return ec.directives.Auth(ctx, nil, directive0, permissions)
-		}
-
-		tmp, err := directive1(rctx)
-		if err != nil {
-			return nil, graphql.ErrorOnPath(ctx, err)
-		}
-		if tmp == nil {
-			return nil, nil
-		}
-		if data, ok := tmp.(*models.Category); ok {
-			return data, nil
-		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be *gitlab.com/rubin-dev/api/pkg/models.Category`, tmp)
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().CategoryFindByID(rctx, fc.Args["id"].(int64))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -8967,6 +12595,8 @@ func (ec *executionContext) fieldContext_Query_categoryFindById(ctx context.Cont
 			switch field.Name {
 			case "id":
 				return ec.fieldContext_Category_id(ctx, field)
+			case "number":
+				return ec.fieldContext_Category_number(ctx, field)
 			case "name":
 				return ec.fieldContext_Category_name(ctx, field)
 			case "descriptionRu":
@@ -8975,6 +12605,8 @@ func (ec *executionContext) fieldContext_Query_categoryFindById(ctx context.Cont
 				return ec.fieldContext_Category_descriptionEn(ctx, field)
 			case "risk":
 				return ec.fieldContext_Category_risk(ctx, field)
+			case "categoryGroup":
+				return ec.fieldContext_Category_categoryGroup(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Category", field.Name)
 		},
@@ -9019,9 +12651,9 @@ func (ec *executionContext) _Query_ethFindAddressByHash(ctx context.Context, fie
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.NodeEntityResponse)
+	res := resTmp.(*model.FindAddressByHashNodeResponse)
 	fc.Result = res
-	return ec.marshalNNodeEntityResponse2ᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋinternalᚋgraphᚋmodelᚐNodeEntityResponse(ctx, field.Selections, res)
+	return ec.marshalNFindAddressByHashNodeResponse2ᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋinternalᚋgraphᚋmodelᚐFindAddressByHashNodeResponse(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Query_ethFindAddressByHash(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -9033,11 +12665,11 @@ func (ec *executionContext) fieldContext_Query_ethFindAddressByHash(ctx context.
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "errors":
-				return ec.fieldContext_NodeEntityResponse_errors(ctx, field)
+				return ec.fieldContext_FindAddressByHashNodeResponse_errors(ctx, field)
 			case "node":
-				return ec.fieldContext_NodeEntityResponse_node(ctx, field)
+				return ec.fieldContext_FindAddressByHashNodeResponse_node(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type NodeEntityResponse", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type FindAddressByHashNodeResponse", field.Name)
 		},
 	}
 	defer func() {
@@ -9192,7 +12824,7 @@ func (ec *executionContext) _Query_ethFindIncomingTransactionAddress(ctx context
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().EthFindIncomingTransactionAddress(rctx, fc.Args["hash"].(string))
+		return ec.resolvers.Query().EthFindIncomingTransactionAddress(rctx, fc.Args["hash"].(string), fc.Args["page"].(int), fc.Args["pageSize"].(int))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -9204,9 +12836,9 @@ func (ec *executionContext) _Query_ethFindIncomingTransactionAddress(ctx context
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.NodeEntityResponse)
+	res := resTmp.(*model.NodeListResponse)
 	fc.Result = res
-	return ec.marshalNNodeEntityResponse2ᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋinternalᚋgraphᚋmodelᚐNodeEntityResponse(ctx, field.Selections, res)
+	return ec.marshalNNodeListResponse2ᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋinternalᚋgraphᚋmodelᚐNodeListResponse(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Query_ethFindIncomingTransactionAddress(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -9218,11 +12850,13 @@ func (ec *executionContext) fieldContext_Query_ethFindIncomingTransactionAddress
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "errors":
-				return ec.fieldContext_NodeEntityResponse_errors(ctx, field)
-			case "node":
-				return ec.fieldContext_NodeEntityResponse_node(ctx, field)
+				return ec.fieldContext_NodeListResponse_errors(ctx, field)
+			case "total":
+				return ec.fieldContext_NodeListResponse_total(ctx, field)
+			case "edge":
+				return ec.fieldContext_NodeListResponse_edge(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type NodeEntityResponse", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type NodeListResponse", field.Name)
 		},
 	}
 	defer func() {
@@ -9253,7 +12887,7 @@ func (ec *executionContext) _Query_ethFindOutcomingTransactionAddress(ctx contex
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().EthFindOutcomingTransactionAddress(rctx, fc.Args["hash"].(string))
+		return ec.resolvers.Query().EthFindOutcomingTransactionAddress(rctx, fc.Args["hash"].(string), fc.Args["page"].(int), fc.Args["pageSize"].(int))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -9265,9 +12899,9 @@ func (ec *executionContext) _Query_ethFindOutcomingTransactionAddress(ctx contex
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.NodeEntityResponse)
+	res := resTmp.(*model.NodeListResponse)
 	fc.Result = res
-	return ec.marshalNNodeEntityResponse2ᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋinternalᚋgraphᚋmodelᚐNodeEntityResponse(ctx, field.Selections, res)
+	return ec.marshalNNodeListResponse2ᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋinternalᚋgraphᚋmodelᚐNodeListResponse(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Query_ethFindOutcomingTransactionAddress(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -9279,11 +12913,13 @@ func (ec *executionContext) fieldContext_Query_ethFindOutcomingTransactionAddres
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "errors":
-				return ec.fieldContext_NodeEntityResponse_errors(ctx, field)
-			case "node":
-				return ec.fieldContext_NodeEntityResponse_node(ctx, field)
+				return ec.fieldContext_NodeListResponse_errors(ctx, field)
+			case "total":
+				return ec.fieldContext_NodeListResponse_total(ctx, field)
+			case "edge":
+				return ec.fieldContext_NodeListResponse_edge(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type NodeEntityResponse", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type NodeListResponse", field.Name)
 		},
 	}
 	defer func() {
@@ -9375,7 +13011,7 @@ func (ec *executionContext) _Query_ethFindBlockByHeight(ctx context.Context, fie
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().EthFindBlockByHeight(rctx, fc.Args["height"].(string))
+		return ec.resolvers.Query().EthFindBlockByHeight(rctx, fc.Args["height"].(int))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -9436,7 +13072,7 @@ func (ec *executionContext) _Query_ethFindTransactionsInBlock(ctx context.Contex
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().EthFindTransactionsInBlock(rctx, fc.Args["height"].(string), fc.Args["page"].(int), fc.Args["pageSize"].(int))
+		return ec.resolvers.Query().EthFindTransactionsInBlock(rctx, fc.Args["height"].(int), fc.Args["page"].(int), fc.Args["pageSize"].(int))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -9479,69 +13115,6 @@ func (ec *executionContext) fieldContext_Query_ethFindTransactionsInBlock(ctx co
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query_ethFindTransactionsInBlock_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Query_ethFindAllInputAndOutputTransactions(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_ethFindAllInputAndOutputTransactions(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().EthFindAllInputAndOutputTransactions(rctx, fc.Args["hash"].(string), fc.Args["page"].(int), fc.Args["pageSize"].(int))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*model.NodeListResponse)
-	fc.Result = res
-	return ec.marshalNNodeListResponse2ᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋinternalᚋgraphᚋmodelᚐNodeListResponse(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Query_ethFindAllInputAndOutputTransactions(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Query",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "errors":
-				return ec.fieldContext_NodeListResponse_errors(ctx, field)
-			case "total":
-				return ec.fieldContext_NodeListResponse_total(ctx, field)
-			case "edge":
-				return ec.fieldContext_NodeListResponse_edge(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type NodeListResponse", field.Name)
-		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Query_ethFindAllInputAndOutputTransactions_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return
 	}
@@ -9622,8 +13195,32 @@ func (ec *executionContext) _Query_ethFindMentionsByAddress(ctx context.Context,
 		}
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().EthFindMentionsByAddress(rctx, fc.Args["address"].(string), fc.Args["page"].(int), fc.Args["pageSize"].(int))
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Query().EthFindMentionsByAddress(rctx, fc.Args["address"].(string), fc.Args["page"].(int), fc.Args["pageSize"].(int))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			permissions, err := ec.unmarshalOString2ᚕstringᚄ(ctx, []interface{}{"subscription.explorer.mentions"})
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.Auth == nil {
+				return nil, errors.New("directive auth is not implemented")
+			}
+			return ec.directives.Auth(ctx, nil, directive0, permissions)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*model.NodeListResponse); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *gitlab.com/rubin-dev/api/internal/graph/model.NodeListResponse`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -9685,8 +13282,32 @@ func (ec *executionContext) _Query_ethFindContactByAddress(ctx context.Context, 
 		}
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().EthFindContactByAddress(rctx, fc.Args["address"].(string))
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Query().EthFindContactByAddress(rctx, fc.Args["address"].(string))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			permissions, err := ec.unmarshalOString2ᚕstringᚄ(ctx, []interface{}{"subscription.explorer.contacts"})
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.Auth == nil {
+				return nil, errors.New("directive auth is not implemented")
+			}
+			return ec.directives.Auth(ctx, nil, directive0, permissions)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*model.NodeEntityResponse); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *gitlab.com/rubin-dev/api/internal/graph/model.NodeEntityResponse`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -9733,8 +13354,8 @@ func (ec *executionContext) fieldContext_Query_ethFindContactByAddress(ctx conte
 	return fc, nil
 }
 
-func (ec *executionContext) _Query_ethFindRiskScoreByAddress(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_ethFindRiskScoreByAddress(ctx, field)
+func (ec *executionContext) _Query_ethRisk(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_ethRisk(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -9746,8 +13367,32 @@ func (ec *executionContext) _Query_ethFindRiskScoreByAddress(ctx context.Context
 		}
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().EthFindRiskScoreByAddress(rctx, fc.Args["address"].(string))
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Query().EthRisk(rctx, fc.Args["address"].(string))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			permissions, err := ec.unmarshalOString2ᚕstringᚄ(ctx, []interface{}{"subscription.explorer.riskscore"})
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.Auth == nil {
+				return nil, errors.New("directive auth is not implemented")
+			}
+			return ec.directives.Auth(ctx, nil, directive0, permissions)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*model.RiskResponse); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *gitlab.com/rubin-dev/api/internal/graph/model.RiskResponse`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -9759,12 +13404,12 @@ func (ec *executionContext) _Query_ethFindRiskScoreByAddress(ctx context.Context
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.NodeEntityResponse)
+	res := resTmp.(*model.RiskResponse)
 	fc.Result = res
-	return ec.marshalNNodeEntityResponse2ᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋinternalᚋgraphᚋmodelᚐNodeEntityResponse(ctx, field.Selections, res)
+	return ec.marshalNRiskResponse2ᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋinternalᚋgraphᚋmodelᚐRiskResponse(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Query_ethFindRiskScoreByAddress(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Query_ethRisk(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Query",
 		Field:      field,
@@ -9773,11 +13418,11 @@ func (ec *executionContext) fieldContext_Query_ethFindRiskScoreByAddress(ctx con
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "errors":
-				return ec.fieldContext_NodeEntityResponse_errors(ctx, field)
-			case "node":
-				return ec.fieldContext_NodeEntityResponse_node(ctx, field)
+				return ec.fieldContext_RiskResponse_errors(ctx, field)
+			case "risk":
+				return ec.fieldContext_RiskResponse_risk(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type NodeEntityResponse", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type RiskResponse", field.Name)
 		},
 	}
 	defer func() {
@@ -9787,7 +13432,94 @@ func (ec *executionContext) fieldContext_Query_ethFindRiskScoreByAddress(ctx con
 		}
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Query_ethFindRiskScoreByAddress_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+	if fc.Args, err = ec.field_Query_ethRisk_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_ethSearch(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_ethSearch(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Query().EthSearch(rctx, fc.Args["query"].(string), fc.Args["page"].(int), fc.Args["limit"].(int), fc.Args["wildcard"].(*bool))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			permissions, err := ec.unmarshalOString2ᚕstringᚄ(ctx, []interface{}{"subscription.explorer.mentions"})
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.Auth == nil {
+				return nil, errors.New("directive auth is not implemented")
+			}
+			return ec.directives.Auth(ctx, nil, directive0, permissions)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*model.SearchResponse); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *gitlab.com/rubin-dev/api/internal/graph/model.SearchResponse`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.SearchResponse)
+	fc.Result = res
+	return ec.marshalNSearchResponse2ᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋinternalᚋgraphᚋmodelᚐSearchResponse(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_ethSearch(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "errors":
+				return ec.fieldContext_SearchResponse_errors(ctx, field)
+			case "total":
+				return ec.fieldContext_SearchResponse_total(ctx, field)
+			case "edge":
+				return ec.fieldContext_SearchResponse_edge(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type SearchResponse", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_ethSearch_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return
 	}
@@ -9809,10 +13541,10 @@ func (ec *executionContext) _Query_search(ctx context.Context, field graphql.Col
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Query().Search(rctx, fc.Args["query"].(string), fc.Args["page"].(int), fc.Args["limit"].(int))
+			return ec.resolvers.Query().Search(rctx, fc.Args["query"].(string), fc.Args["page"].(int), fc.Args["limit"].(int), fc.Args["wildcard"].(bool))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
-			permissions, err := ec.unmarshalOString2ᚕstringᚄ(ctx, []interface{}{"subscription"})
+			permissions, err := ec.unmarshalOString2ᚕstringᚄ(ctx, []interface{}{"subscription.fulltext"})
 			if err != nil {
 				return nil, err
 			}
@@ -9895,7 +13627,7 @@ func (ec *executionContext) _Query_searchCount(ctx context.Context, field graphq
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().SearchCount(rctx, fc.Args["query"].(string))
+		return ec.resolvers.Query().SearchCount(rctx, fc.Args["query"].(string), fc.Args["wildcard"].(bool))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -9936,6 +13668,907 @@ func (ec *executionContext) fieldContext_Query_searchCount(ctx context.Context, 
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query_searchCount_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_tronFindAddressByHash(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_tronFindAddressByHash(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().TronFindAddressByHash(rctx, fc.Args["address"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.FindAddressByHashNodeResponse)
+	fc.Result = res
+	return ec.marshalNFindAddressByHashNodeResponse2ᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋinternalᚋgraphᚋmodelᚐFindAddressByHashNodeResponse(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_tronFindAddressByHash(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "errors":
+				return ec.fieldContext_FindAddressByHashNodeResponse_errors(ctx, field)
+			case "node":
+				return ec.fieldContext_FindAddressByHashNodeResponse_node(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type FindAddressByHashNodeResponse", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_tronFindAddressByHash_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_tronFindTransactionsByAddress(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_tronFindTransactionsByAddress(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().TronFindTransactionsByAddress(rctx, fc.Args["hash"].(string), fc.Args["page"].(int), fc.Args["pageSize"].(int))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.NodeListResponse)
+	fc.Result = res
+	return ec.marshalNNodeListResponse2ᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋinternalᚋgraphᚋmodelᚐNodeListResponse(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_tronFindTransactionsByAddress(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "errors":
+				return ec.fieldContext_NodeListResponse_errors(ctx, field)
+			case "total":
+				return ec.fieldContext_NodeListResponse_total(ctx, field)
+			case "edge":
+				return ec.fieldContext_NodeListResponse_edge(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type NodeListResponse", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_tronFindTransactionsByAddress_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_tronFindTransactionByHash(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_tronFindTransactionByHash(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().TronFindTransactionByHash(rctx, fc.Args["hash"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.NodeEntityResponse)
+	fc.Result = res
+	return ec.marshalNNodeEntityResponse2ᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋinternalᚋgraphᚋmodelᚐNodeEntityResponse(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_tronFindTransactionByHash(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "errors":
+				return ec.fieldContext_NodeEntityResponse_errors(ctx, field)
+			case "node":
+				return ec.fieldContext_NodeEntityResponse_node(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type NodeEntityResponse", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_tronFindTransactionByHash_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_tronFindIncomingTransactionAddress(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_tronFindIncomingTransactionAddress(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().TronFindIncomingTransactionAddress(rctx, fc.Args["hash"].(string), fc.Args["page"].(int), fc.Args["pageSize"].(int))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.NodeListResponse)
+	fc.Result = res
+	return ec.marshalNNodeListResponse2ᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋinternalᚋgraphᚋmodelᚐNodeListResponse(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_tronFindIncomingTransactionAddress(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "errors":
+				return ec.fieldContext_NodeListResponse_errors(ctx, field)
+			case "total":
+				return ec.fieldContext_NodeListResponse_total(ctx, field)
+			case "edge":
+				return ec.fieldContext_NodeListResponse_edge(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type NodeListResponse", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_tronFindIncomingTransactionAddress_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_tronFindOutcomingTransactionAddress(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_tronFindOutcomingTransactionAddress(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().TronFindOutcomingTransactionAddress(rctx, fc.Args["hash"].(string), fc.Args["page"].(int), fc.Args["pageSize"].(int))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.NodeListResponse)
+	fc.Result = res
+	return ec.marshalNNodeListResponse2ᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋinternalᚋgraphᚋmodelᚐNodeListResponse(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_tronFindOutcomingTransactionAddress(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "errors":
+				return ec.fieldContext_NodeListResponse_errors(ctx, field)
+			case "total":
+				return ec.fieldContext_NodeListResponse_total(ctx, field)
+			case "edge":
+				return ec.fieldContext_NodeListResponse_edge(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type NodeListResponse", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_tronFindOutcomingTransactionAddress_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_tronFindBlockByTransaction(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_tronFindBlockByTransaction(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().TronFindBlockByTransaction(rctx, fc.Args["hash"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.NodeEntityResponse)
+	fc.Result = res
+	return ec.marshalNNodeEntityResponse2ᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋinternalᚋgraphᚋmodelᚐNodeEntityResponse(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_tronFindBlockByTransaction(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "errors":
+				return ec.fieldContext_NodeEntityResponse_errors(ctx, field)
+			case "node":
+				return ec.fieldContext_NodeEntityResponse_node(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type NodeEntityResponse", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_tronFindBlockByTransaction_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_tronFindBlockByHeight(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_tronFindBlockByHeight(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().TronFindBlockByHeight(rctx, fc.Args["height"].(int))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.NodeEntityResponse)
+	fc.Result = res
+	return ec.marshalNNodeEntityResponse2ᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋinternalᚋgraphᚋmodelᚐNodeEntityResponse(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_tronFindBlockByHeight(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "errors":
+				return ec.fieldContext_NodeEntityResponse_errors(ctx, field)
+			case "node":
+				return ec.fieldContext_NodeEntityResponse_node(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type NodeEntityResponse", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_tronFindBlockByHeight_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_tronFindTransactionsInBlock(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_tronFindTransactionsInBlock(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().TronFindTransactionsInBlock(rctx, fc.Args["height"].(int), fc.Args["page"].(int), fc.Args["pageSize"].(int))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.NodeListResponse)
+	fc.Result = res
+	return ec.marshalNNodeListResponse2ᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋinternalᚋgraphᚋmodelᚐNodeListResponse(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_tronFindTransactionsInBlock(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "errors":
+				return ec.fieldContext_NodeListResponse_errors(ctx, field)
+			case "total":
+				return ec.fieldContext_NodeListResponse_total(ctx, field)
+			case "edge":
+				return ec.fieldContext_NodeListResponse_edge(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type NodeListResponse", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_tronFindTransactionsInBlock_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_tronFindBlockByHash(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_tronFindBlockByHash(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().TronFindBlockByHash(rctx, fc.Args["hash"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.NodeEntityResponse)
+	fc.Result = res
+	return ec.marshalNNodeEntityResponse2ᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋinternalᚋgraphᚋmodelᚐNodeEntityResponse(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_tronFindBlockByHash(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "errors":
+				return ec.fieldContext_NodeEntityResponse_errors(ctx, field)
+			case "node":
+				return ec.fieldContext_NodeEntityResponse_node(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type NodeEntityResponse", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_tronFindBlockByHash_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_tronFindMentionsByAddress(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_tronFindMentionsByAddress(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Query().TronFindMentionsByAddress(rctx, fc.Args["address"].(string), fc.Args["page"].(int), fc.Args["pageSize"].(int))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			permissions, err := ec.unmarshalOString2ᚕstringᚄ(ctx, []interface{}{"subscription.explorer.mentions"})
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.Auth == nil {
+				return nil, errors.New("directive auth is not implemented")
+			}
+			return ec.directives.Auth(ctx, nil, directive0, permissions)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*model.NodeListResponse); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *gitlab.com/rubin-dev/api/internal/graph/model.NodeListResponse`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.NodeListResponse)
+	fc.Result = res
+	return ec.marshalNNodeListResponse2ᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋinternalᚋgraphᚋmodelᚐNodeListResponse(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_tronFindMentionsByAddress(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "errors":
+				return ec.fieldContext_NodeListResponse_errors(ctx, field)
+			case "total":
+				return ec.fieldContext_NodeListResponse_total(ctx, field)
+			case "edge":
+				return ec.fieldContext_NodeListResponse_edge(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type NodeListResponse", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_tronFindMentionsByAddress_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_tronFindContactByAddress(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_tronFindContactByAddress(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Query().TronFindContactByAddress(rctx, fc.Args["address"].(string))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			permissions, err := ec.unmarshalOString2ᚕstringᚄ(ctx, []interface{}{"subscription.explorer.contacts"})
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.Auth == nil {
+				return nil, errors.New("directive auth is not implemented")
+			}
+			return ec.directives.Auth(ctx, nil, directive0, permissions)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*model.NodeEntityResponse); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *gitlab.com/rubin-dev/api/internal/graph/model.NodeEntityResponse`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.NodeEntityResponse)
+	fc.Result = res
+	return ec.marshalNNodeEntityResponse2ᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋinternalᚋgraphᚋmodelᚐNodeEntityResponse(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_tronFindContactByAddress(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "errors":
+				return ec.fieldContext_NodeEntityResponse_errors(ctx, field)
+			case "node":
+				return ec.fieldContext_NodeEntityResponse_node(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type NodeEntityResponse", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_tronFindContactByAddress_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_tronRisk(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_tronRisk(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Query().TronRisk(rctx, fc.Args["address"].(string))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			permissions, err := ec.unmarshalOString2ᚕstringᚄ(ctx, []interface{}{"subscription.explorer.riskscore"})
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.Auth == nil {
+				return nil, errors.New("directive auth is not implemented")
+			}
+			return ec.directives.Auth(ctx, nil, directive0, permissions)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*model.RiskResponse); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *gitlab.com/rubin-dev/api/internal/graph/model.RiskResponse`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.RiskResponse)
+	fc.Result = res
+	return ec.marshalNRiskResponse2ᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋinternalᚋgraphᚋmodelᚐRiskResponse(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_tronRisk(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "errors":
+				return ec.fieldContext_RiskResponse_errors(ctx, field)
+			case "risk":
+				return ec.fieldContext_RiskResponse_risk(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type RiskResponse", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_tronRisk_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_tronSearch(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_tronSearch(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Query().TronSearch(rctx, fc.Args["query"].(string), fc.Args["page"].(int), fc.Args["limit"].(int), fc.Args["wildcard"].(*bool))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			permissions, err := ec.unmarshalOString2ᚕstringᚄ(ctx, []interface{}{"subscription.explorer.mentions"})
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.Auth == nil {
+				return nil, errors.New("directive auth is not implemented")
+			}
+			return ec.directives.Auth(ctx, nil, directive0, permissions)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*model.SearchResponse); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *gitlab.com/rubin-dev/api/internal/graph/model.SearchResponse`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.SearchResponse)
+	fc.Result = res
+	return ec.marshalNSearchResponse2ᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋinternalᚋgraphᚋmodelᚐSearchResponse(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_tronSearch(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "errors":
+				return ec.fieldContext_SearchResponse_errors(ctx, field)
+			case "total":
+				return ec.fieldContext_SearchResponse_total(ctx, field)
+			case "edge":
+				return ec.fieldContext_SearchResponse_edge(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type SearchResponse", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_tronSearch_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return
 	}
@@ -10677,6 +15310,519 @@ func (ec *executionContext) fieldContext_RestoreResponse_errors(ctx context.Cont
 	return fc, nil
 }
 
+func (ec *executionContext) _Risk_risk(ctx context.Context, field graphql.CollectedField, obj *neo4jstore.Risk) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Risk_risk(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Risk, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*float64)
+	fc.Result = res
+	return ec.marshalOFloat2ᚖfloat64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Risk_risk(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Risk",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Risk_reported(ctx context.Context, field graphql.CollectedField, obj *neo4jstore.Risk) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Risk_reported(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Reported, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*neo4jstore.RiskData)
+	fc.Result = res
+	return ec.marshalORiskData2ᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋpkgᚋneo4jstoreᚐRiskData(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Risk_reported(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Risk",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "category":
+				return ec.fieldContext_RiskData_category(ctx, field)
+			case "risk":
+				return ec.fieldContext_RiskData_risk(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type RiskData", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Risk_wallet(ctx context.Context, field graphql.CollectedField, obj *neo4jstore.Risk) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Risk_wallet(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Wallet, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*neo4jstore.RiskData)
+	fc.Result = res
+	return ec.marshalORiskData2ᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋpkgᚋneo4jstoreᚐRiskData(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Risk_wallet(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Risk",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "category":
+				return ec.fieldContext_RiskData_category(ctx, field)
+			case "risk":
+				return ec.fieldContext_RiskData_risk(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type RiskData", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Risk_calculated(ctx context.Context, field graphql.CollectedField, obj *neo4jstore.Risk) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Risk_calculated(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Calculated, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*neo4jstore.CalculatedRisk)
+	fc.Result = res
+	return ec.marshalOCalculatedRisk2ᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋpkgᚋneo4jstoreᚐCalculatedRisk(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Risk_calculated(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Risk",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "total":
+				return ec.fieldContext_CalculatedRisk_total(ctx, field)
+			case "risk":
+				return ec.fieldContext_CalculatedRisk_risk(ctx, field)
+			case "items":
+				return ec.fieldContext_CalculatedRisk_items(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type CalculatedRisk", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RiskData_category(ctx context.Context, field graphql.CollectedField, obj *neo4jstore.RiskData) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RiskData_category(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.RiskData().Category(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*models.Category)
+	fc.Result = res
+	return ec.marshalOCategory2ᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋpkgᚋmodelsᚐCategory(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RiskData_category(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RiskData",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Category_id(ctx, field)
+			case "number":
+				return ec.fieldContext_Category_number(ctx, field)
+			case "name":
+				return ec.fieldContext_Category_name(ctx, field)
+			case "descriptionRu":
+				return ec.fieldContext_Category_descriptionRu(ctx, field)
+			case "descriptionEn":
+				return ec.fieldContext_Category_descriptionEn(ctx, field)
+			case "risk":
+				return ec.fieldContext_Category_risk(ctx, field)
+			case "categoryGroup":
+				return ec.fieldContext_Category_categoryGroup(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Category", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RiskData_risk(ctx context.Context, field graphql.CollectedField, obj *neo4jstore.RiskData) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RiskData_risk(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Risk, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalOFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RiskData_risk(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RiskData",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RiskNodeEntityResponse_errors(ctx context.Context, field graphql.CollectedField, obj *model.RiskNodeEntityResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RiskNodeEntityResponse_errors(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Errors, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(interface{})
+	fc.Result = res
+	return ec.marshalOAny2interface(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RiskNodeEntityResponse_errors(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RiskNodeEntityResponse",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Any does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RiskNodeEntityResponse_node(ctx context.Context, field graphql.CollectedField, obj *model.RiskNodeEntityResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RiskNodeEntityResponse_node(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Node, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*neo4jstore.Node)
+	fc.Result = res
+	return ec.marshalONode2ᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋpkgᚋneo4jstoreᚐNode(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RiskNodeEntityResponse_node(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RiskNodeEntityResponse",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Node_id(ctx, field)
+			case "labels":
+				return ec.fieldContext_Node_labels(ctx, field)
+			case "props":
+				return ec.fieldContext_Node_props(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Node", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RiskNodeEntityResponse_risk(ctx context.Context, field graphql.CollectedField, obj *model.RiskNodeEntityResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RiskNodeEntityResponse_risk(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Risk, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*neo4jstore.CalculatedRisk)
+	fc.Result = res
+	return ec.marshalOCalculatedRisk2ᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋpkgᚋneo4jstoreᚐCalculatedRisk(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RiskNodeEntityResponse_risk(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RiskNodeEntityResponse",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "total":
+				return ec.fieldContext_CalculatedRisk_total(ctx, field)
+			case "risk":
+				return ec.fieldContext_CalculatedRisk_risk(ctx, field)
+			case "items":
+				return ec.fieldContext_CalculatedRisk_items(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type CalculatedRisk", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RiskResponse_errors(ctx context.Context, field graphql.CollectedField, obj *model.RiskResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RiskResponse_errors(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Errors, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(interface{})
+	fc.Result = res
+	return ec.marshalOAny2interface(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RiskResponse_errors(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RiskResponse",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Any does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RiskResponse_risk(ctx context.Context, field graphql.CollectedField, obj *model.RiskResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RiskResponse_risk(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Risk, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*neo4jstore.Risk)
+	fc.Result = res
+	return ec.marshalORisk2ᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋpkgᚋneo4jstoreᚐRisk(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RiskResponse_risk(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RiskResponse",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "risk":
+				return ec.fieldContext_Risk_risk(ctx, field)
+			case "reported":
+				return ec.fieldContext_Risk_reported(ctx, field)
+			case "wallet":
+				return ec.fieldContext_Risk_wallet(ctx, field)
+			case "calculated":
+				return ec.fieldContext_Risk_calculated(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Risk", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _SearchCountResponse_errors(ctx context.Context, field graphql.CollectedField, obj *model.SearchCountResponse) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_SearchCountResponse_errors(ctx, field)
 	if err != nil {
@@ -10894,6 +16040,94 @@ func (ec *executionContext) fieldContext_SearchResponse_edge(ctx context.Context
 				return ec.fieldContext_Entity_data(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Entity", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _StatisticsSummary_network(ctx context.Context, field graphql.CollectedField, obj *models.StatisticsSummary) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_StatisticsSummary_network(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Network, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_StatisticsSummary_network(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "StatisticsSummary",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _StatisticsSummary_total(ctx context.Context, field graphql.CollectedField, obj *models.StatisticsSummary) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_StatisticsSummary_total(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Total, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_StatisticsSummary_total(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "StatisticsSummary",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
 		},
 	}
 	return fc, nil
@@ -13252,6 +18486,155 @@ func (ec *executionContext) fieldContext___Type_specifiedByURL(ctx context.Conte
 
 // region    **************************** input.gotpl *****************************
 
+func (ec *executionContext) unmarshalInputBillingHistoryListInput(ctx context.Context, obj interface{}) (model.BillingHistoryListInput, error) {
+	var it model.BillingHistoryListInput
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	for k, v := range asMap {
+		switch k {
+		case "page":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("page"))
+			it.Page, err = ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "pageSize":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pageSize"))
+			it.PageSize, err = ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "from":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("from"))
+			it.From, err = ec.unmarshalODate2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "to":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("to"))
+			it.To, err = ec.unmarshalODate2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "last":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("last"))
+			it.Last, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputBillingStatisticsFilterInput(ctx context.Context, obj interface{}) (model.BillingStatisticsFilterInput, error) {
+	var it model.BillingStatisticsFilterInput
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	for k, v := range asMap {
+		switch k {
+		case "network":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("network"))
+			it.Network, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "from":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("from"))
+			it.From, err = ec.unmarshalODate2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "to":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("to"))
+			it.To, err = ec.unmarshalODate2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "last":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("last"))
+			it.Last, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputBillingStatisticsRiskRangeInput(ctx context.Context, obj interface{}) (model.BillingStatisticsRiskRangeInput, error) {
+	var it model.BillingStatisticsRiskRangeInput
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	for k, v := range asMap {
+		switch k {
+		case "network":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("network"))
+			it.Network, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "from":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("from"))
+			it.From, err = ec.unmarshalODate2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "to":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("to"))
+			it.To, err = ec.unmarshalODate2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "last":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("last"))
+			it.Last, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputCategoryCreateInput(ctx context.Context, obj interface{}) (model.CategoryCreateInput, error) {
 	var it model.CategoryCreateInput
 	asMap := map[string]interface{}{}
@@ -13266,6 +18649,14 @@ func (ec *executionContext) unmarshalInputCategoryCreateInput(ctx context.Contex
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
 			it.Name, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "number":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("number"))
+			it.Number, err = ec.unmarshalNInt2int(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -13293,6 +18684,14 @@ func (ec *executionContext) unmarshalInputCategoryCreateInput(ctx context.Contex
 			if err != nil {
 				return it, err
 			}
+		case "categoryGroupId":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("categoryGroupId"))
+			it.CategoryGroupID, err = ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		}
 	}
 
@@ -13313,6 +18712,14 @@ func (ec *executionContext) unmarshalInputCategoryUpdateInput(ctx context.Contex
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
 			it.Name, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "number":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("number"))
+			it.Number, err = ec.unmarshalOInt2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -13337,6 +18744,14 @@ func (ec *executionContext) unmarshalInputCategoryUpdateInput(ctx context.Contex
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("risk"))
 			it.Risk, err = ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "categoryGroupId":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("categoryGroupId"))
+			it.CategoryGroupID, err = ec.unmarshalOInt2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -13585,6 +19000,45 @@ func (ec *executionContext) unmarshalInputRestoreInput(ctx context.Context, obj 
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("email"))
 			it.Email, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputStatisticsSummaryInput(ctx context.Context, obj interface{}) (model.StatisticsSummaryInput, error) {
+	var it model.StatisticsSummaryInput
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	for k, v := range asMap {
+		switch k {
+		case "from":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("from"))
+			it.From, err = ec.unmarshalODate2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "to":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("to"))
+			it.To, err = ec.unmarshalODate2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "last":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("last"))
+			it.Last, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -13907,13 +19361,47 @@ func (ec *executionContext) _BillingRequest(ctx context.Context, sel ast.Selecti
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
-		case "category":
+		case "isCalculated":
 
-			out.Values[i] = ec._BillingRequest_category(ctx, field, obj)
+			out.Values[i] = ec._BillingRequest_isCalculated(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
+		case "isReported":
+
+			out.Values[i] = ec._BillingRequest_isReported(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "isWallet":
+
+			out.Values[i] = ec._BillingRequest_isWallet(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "categories":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._BillingRequest_categories(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		case "network":
 
 			out.Values[i] = ec._BillingRequest_network(ctx, field, obj)
@@ -13952,6 +19440,454 @@ func (ec *executionContext) _BillingRequest(ctx context.Context, sel ast.Selecti
 	return out
 }
 
+var billingRiskImplementors = []string{"BillingRisk"}
+
+func (ec *executionContext) _BillingRisk(ctx context.Context, sel ast.SelectionSet, obj *models.BillingRisk) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, billingRiskImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("BillingRisk")
+		case "id":
+
+			out.Values[i] = ec._BillingRisk_id(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "risk":
+
+			out.Values[i] = ec._BillingRisk_risk(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "riskRaw":
+
+			out.Values[i] = ec._BillingRisk_riskRaw(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "percent":
+
+			out.Values[i] = ec._BillingRisk_percent(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "percentRaw":
+
+			out.Values[i] = ec._BillingRisk_percentRaw(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "isCalculated":
+
+			out.Values[i] = ec._BillingRisk_isCalculated(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "isReported":
+
+			out.Values[i] = ec._BillingRisk_isReported(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "isWallet":
+
+			out.Values[i] = ec._BillingRisk_isWallet(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "total":
+
+			out.Values[i] = ec._BillingRisk_total(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "directory":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._BillingRisk_directory(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "category":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._BillingRisk_category(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var billingStatisticsBlockchainImplementors = []string{"BillingStatisticsBlockchain"}
+
+func (ec *executionContext) _BillingStatisticsBlockchain(ctx context.Context, sel ast.SelectionSet, obj *models.BillingStatisticsBlockchain) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, billingStatisticsBlockchainImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("BillingStatisticsBlockchain")
+		case "total":
+
+			out.Values[i] = ec._BillingStatisticsBlockchain_total(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "categories":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._BillingStatisticsBlockchain_categories(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var billingStatisticsCategoryImplementors = []string{"BillingStatisticsCategory"}
+
+func (ec *executionContext) _BillingStatisticsCategory(ctx context.Context, sel ast.SelectionSet, obj *models.BillingStatisticsCategory) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, billingStatisticsCategoryImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("BillingStatisticsCategory")
+		case "number":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._BillingStatisticsCategory_number(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "name":
+
+			out.Values[i] = ec._BillingStatisticsCategory_name(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "risk":
+
+			out.Values[i] = ec._BillingStatisticsCategory_risk(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var billingStatisticsResponseImplementors = []string{"BillingStatisticsResponse"}
+
+func (ec *executionContext) _BillingStatisticsResponse(ctx context.Context, sel ast.SelectionSet, obj *model.BillingStatisticsResponse) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, billingStatisticsResponseImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("BillingStatisticsResponse")
+		case "errors":
+
+			out.Values[i] = ec._BillingStatisticsResponse_errors(ctx, field, obj)
+
+		case "stats":
+
+			out.Values[i] = ec._BillingStatisticsResponse_stats(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var billingStatisticsRiskImplementors = []string{"BillingStatisticsRisk"}
+
+func (ec *executionContext) _BillingStatisticsRisk(ctx context.Context, sel ast.SelectionSet, obj *models.BillingStatisticsRisk) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, billingStatisticsRiskImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("BillingStatisticsRisk")
+		case "name":
+
+			out.Values[i] = ec._BillingStatisticsRisk_name(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "total":
+
+			out.Values[i] = ec._BillingStatisticsRisk_total(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var billingStatisticsSummaryResponseImplementors = []string{"BillingStatisticsSummaryResponse"}
+
+func (ec *executionContext) _BillingStatisticsSummaryResponse(ctx context.Context, sel ast.SelectionSet, obj *model.BillingStatisticsSummaryResponse) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, billingStatisticsSummaryResponseImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("BillingStatisticsSummaryResponse")
+		case "errors":
+
+			out.Values[i] = ec._BillingStatisticsSummaryResponse_errors(ctx, field, obj)
+
+		case "items":
+
+			out.Values[i] = ec._BillingStatisticsSummaryResponse_items(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var calculateItemImplementors = []string{"CalculateItem"}
+
+func (ec *executionContext) _CalculateItem(ctx context.Context, sel ast.SelectionSet, obj *neo4jstore.CalculateItem) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, calculateItemImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("CalculateItem")
+		case "id":
+
+			out.Values[i] = ec._CalculateItem_id(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "total":
+
+			out.Values[i] = ec._CalculateItem_total(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "percent":
+
+			out.Values[i] = ec._CalculateItem_percent(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "percent_raw":
+
+			out.Values[i] = ec._CalculateItem_percent_raw(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "risk":
+
+			out.Values[i] = ec._CalculateItem_risk(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "risk_raw":
+
+			out.Values[i] = ec._CalculateItem_risk_raw(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "i18n":
+
+			out.Values[i] = ec._CalculateItem_i18n(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var calculatedRiskImplementors = []string{"CalculatedRisk"}
+
+func (ec *executionContext) _CalculatedRisk(ctx context.Context, sel ast.SelectionSet, obj *neo4jstore.CalculatedRisk) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, calculatedRiskImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("CalculatedRisk")
+		case "total":
+
+			out.Values[i] = ec._CalculatedRisk_total(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "risk":
+
+			out.Values[i] = ec._CalculatedRisk_risk(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "items":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._CalculatedRisk_items(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var categoryImplementors = []string{"Category"}
 
 func (ec *executionContext) _Category(ctx context.Context, sel ast.SelectionSet, obj *models.Category) graphql.Marshaler {
@@ -13967,36 +19903,60 @@ func (ec *executionContext) _Category(ctx context.Context, sel ast.SelectionSet,
 			out.Values[i] = ec._Category_id(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "number":
+
+			out.Values[i] = ec._Category_number(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "name":
 
 			out.Values[i] = ec._Category_name(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "descriptionRu":
 
 			out.Values[i] = ec._Category_descriptionRu(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "descriptionEn":
 
 			out.Values[i] = ec._Category_descriptionEn(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "risk":
 
 			out.Values[i] = ec._Category_risk(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
+		case "categoryGroup":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Category_categoryGroup(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -14037,6 +19997,48 @@ func (ec *executionContext) _CategoryCreateResponse(ctx context.Context, sel ast
 	return out
 }
 
+var categoryGroupImplementors = []string{"CategoryGroup"}
+
+func (ec *executionContext) _CategoryGroup(ctx context.Context, sel ast.SelectionSet, obj *models.CategoryGroup) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, categoryGroupImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("CategoryGroup")
+		case "id":
+
+			out.Values[i] = ec._CategoryGroup_id(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "nameRu":
+
+			out.Values[i] = ec._CategoryGroup_nameRu(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "nameEn":
+
+			out.Values[i] = ec._CategoryGroup_nameEn(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var categoryListResponseImplementors = []string{"CategoryListResponse"}
 
 func (ec *executionContext) _CategoryListResponse(ctx context.Context, sel ast.SelectionSet, obj *model.CategoryListResponse) graphql.Marshaler {
@@ -14050,10 +20052,6 @@ func (ec *executionContext) _CategoryListResponse(ctx context.Context, sel ast.S
 		case "errors":
 
 			out.Values[i] = ec._CategoryListResponse_errors(ctx, field, obj)
-
-		case "total":
-
-			out.Values[i] = ec._CategoryListResponse_total(ctx, field, obj)
 
 		case "edge":
 
@@ -14156,6 +20154,41 @@ func (ec *executionContext) _ChangePasswordResponse(ctx context.Context, sel ast
 	return out
 }
 
+var directoryI18nImplementors = []string{"DirectoryI18n"}
+
+func (ec *executionContext) _DirectoryI18n(ctx context.Context, sel ast.SelectionSet, obj *neo4jstore.DirectoryI18n) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, directoryI18nImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("DirectoryI18n")
+		case "ru":
+
+			out.Values[i] = ec._DirectoryI18n_ru(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "en":
+
+			out.Values[i] = ec._DirectoryI18n_en(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var entityImplementors = []string{"Entity"}
 
 func (ec *executionContext) _Entity(ctx context.Context, sel ast.SelectionSet, obj *elastic.Entity) graphql.Marshaler {
@@ -14208,6 +20241,70 @@ func (ec *executionContext) _Entity(ctx context.Context, sel ast.SelectionSet, o
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var findAddressByHashNodeImplementors = []string{"FindAddressByHashNode"}
+
+func (ec *executionContext) _FindAddressByHashNode(ctx context.Context, sel ast.SelectionSet, obj *neo4jstore.FindAddressByHashNode) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, findAddressByHashNodeImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("FindAddressByHashNode")
+		case "total":
+
+			out.Values[i] = ec._FindAddressByHashNode_total(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "address":
+
+			out.Values[i] = ec._FindAddressByHashNode_address(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var findAddressByHashNodeResponseImplementors = []string{"FindAddressByHashNodeResponse"}
+
+func (ec *executionContext) _FindAddressByHashNodeResponse(ctx context.Context, sel ast.SelectionSet, obj *model.FindAddressByHashNodeResponse) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, findAddressByHashNodeResponseImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("FindAddressByHashNodeResponse")
+		case "errors":
+
+			out.Values[i] = ec._FindAddressByHashNodeResponse_errors(ctx, field, obj)
+
+		case "node":
+
+			out.Values[i] = ec._FindAddressByHashNodeResponse_node(ctx, field, obj)
+
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -14470,7 +20567,7 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 
 var nodeImplementors = []string{"Node"}
 
-func (ec *executionContext) _Node(ctx context.Context, sel ast.SelectionSet, obj *neoutils.Node) graphql.Marshaler {
+func (ec *executionContext) _Node(ctx context.Context, sel ast.SelectionSet, obj *neo4jstore.Node) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, nodeImplementors)
 	out := graphql.NewFieldSet(fields)
 	var invalids uint32
@@ -14744,6 +20841,75 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			out.Concurrently(i, func() graphql.Marshaler {
 				return rrm(innerCtx)
 			})
+		case "billingStatistics":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_billingStatistics(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
+		case "billingStatisticsSummary":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_billingStatisticsSummary(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
+		case "billingStatisticsRiskRange":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_billingStatisticsRiskRange(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
 		case "billingKeyList":
 			field := field
 
@@ -14754,52 +20920,6 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_billingKeyList(ctx, field)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			}
-
-			rrm := func(ctx context.Context) graphql.Marshaler {
-				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
-			}
-
-			out.Concurrently(i, func() graphql.Marshaler {
-				return rrm(innerCtx)
-			})
-		case "btcExistsAddressByHashCount":
-			field := field
-
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_btcExistsAddressByHashCount(ctx, field)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			}
-
-			rrm := func(ctx context.Context) graphql.Marshaler {
-				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
-			}
-
-			out.Concurrently(i, func() graphql.Marshaler {
-				return rrm(innerCtx)
-			})
-		case "btcExistsTransactionByHashCount":
-			field := field
-
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_btcExistsTransactionByHashCount(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -14905,7 +21025,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			out.Concurrently(i, func() graphql.Marshaler {
 				return rrm(innerCtx)
 			})
-		case "btcFindRiskScore":
+		case "btcRisk":
 			field := field
 
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
@@ -14914,7 +21034,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_btcFindRiskScore(ctx, field)
+				res = ec._Query_btcRisk(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -15112,29 +21232,6 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			out.Concurrently(i, func() graphql.Marshaler {
 				return rrm(innerCtx)
 			})
-		case "btcFindAllInputAndOutputByTransaction":
-			field := field
-
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_btcFindAllInputAndOutputByTransaction(ctx, field)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			}
-
-			rrm := func(ctx context.Context) graphql.Marshaler {
-				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
-			}
-
-			out.Concurrently(i, func() graphql.Marshaler {
-				return rrm(innerCtx)
-			})
 		case "btcFindTransactionsInBlockByHash":
 			field := field
 
@@ -15204,6 +21301,29 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			out.Concurrently(i, func() graphql.Marshaler {
 				return rrm(innerCtx)
 			})
+		case "btcSearch":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_btcSearch(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
 		case "categoryList":
 			field := field
 
@@ -15214,6 +21334,29 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_categoryList(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
+		case "categoryAllList":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_categoryAllList(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -15431,29 +21574,6 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			out.Concurrently(i, func() graphql.Marshaler {
 				return rrm(innerCtx)
 			})
-		case "ethFindAllInputAndOutputTransactions":
-			field := field
-
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_ethFindAllInputAndOutputTransactions(ctx, field)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			}
-
-			rrm := func(ctx context.Context) graphql.Marshaler {
-				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
-			}
-
-			out.Concurrently(i, func() graphql.Marshaler {
-				return rrm(innerCtx)
-			})
 		case "ethFindBlockByHash":
 			field := field
 
@@ -15523,7 +21643,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			out.Concurrently(i, func() graphql.Marshaler {
 				return rrm(innerCtx)
 			})
-		case "ethFindRiskScoreByAddress":
+		case "ethRisk":
 			field := field
 
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
@@ -15532,7 +21652,30 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_ethFindRiskScoreByAddress(ctx, field)
+				res = ec._Query_ethRisk(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
+		case "ethSearch":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_ethSearch(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -15579,6 +21722,305 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_searchCount(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
+		case "tronFindAddressByHash":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_tronFindAddressByHash(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
+		case "tronFindTransactionsByAddress":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_tronFindTransactionsByAddress(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
+		case "tronFindTransactionByHash":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_tronFindTransactionByHash(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
+		case "tronFindIncomingTransactionAddress":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_tronFindIncomingTransactionAddress(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
+		case "tronFindOutcomingTransactionAddress":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_tronFindOutcomingTransactionAddress(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
+		case "tronFindBlockByTransaction":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_tronFindBlockByTransaction(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
+		case "tronFindBlockByHeight":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_tronFindBlockByHeight(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
+		case "tronFindTransactionsInBlock":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_tronFindTransactionsInBlock(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
+		case "tronFindBlockByHash":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_tronFindBlockByHash(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
+		case "tronFindMentionsByAddress":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_tronFindMentionsByAddress(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
+		case "tronFindContactByAddress":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_tronFindContactByAddress(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
+		case "tronRisk":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_tronRisk(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
+		case "tronSearch":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_tronSearch(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -15812,6 +22254,147 @@ func (ec *executionContext) _RestoreResponse(ctx context.Context, sel ast.Select
 	return out
 }
 
+var riskImplementors = []string{"Risk"}
+
+func (ec *executionContext) _Risk(ctx context.Context, sel ast.SelectionSet, obj *neo4jstore.Risk) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, riskImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Risk")
+		case "risk":
+
+			out.Values[i] = ec._Risk_risk(ctx, field, obj)
+
+		case "reported":
+
+			out.Values[i] = ec._Risk_reported(ctx, field, obj)
+
+		case "wallet":
+
+			out.Values[i] = ec._Risk_wallet(ctx, field, obj)
+
+		case "calculated":
+
+			out.Values[i] = ec._Risk_calculated(ctx, field, obj)
+
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var riskDataImplementors = []string{"RiskData"}
+
+func (ec *executionContext) _RiskData(ctx context.Context, sel ast.SelectionSet, obj *neo4jstore.RiskData) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, riskDataImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("RiskData")
+		case "category":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._RiskData_category(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "risk":
+
+			out.Values[i] = ec._RiskData_risk(ctx, field, obj)
+
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var riskNodeEntityResponseImplementors = []string{"RiskNodeEntityResponse"}
+
+func (ec *executionContext) _RiskNodeEntityResponse(ctx context.Context, sel ast.SelectionSet, obj *model.RiskNodeEntityResponse) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, riskNodeEntityResponseImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("RiskNodeEntityResponse")
+		case "errors":
+
+			out.Values[i] = ec._RiskNodeEntityResponse_errors(ctx, field, obj)
+
+		case "node":
+
+			out.Values[i] = ec._RiskNodeEntityResponse_node(ctx, field, obj)
+
+		case "risk":
+
+			out.Values[i] = ec._RiskNodeEntityResponse_risk(ctx, field, obj)
+
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var riskResponseImplementors = []string{"RiskResponse"}
+
+func (ec *executionContext) _RiskResponse(ctx context.Context, sel ast.SelectionSet, obj *model.RiskResponse) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, riskResponseImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("RiskResponse")
+		case "errors":
+
+			out.Values[i] = ec._RiskResponse_errors(ctx, field, obj)
+
+		case "risk":
+
+			out.Values[i] = ec._RiskResponse_risk(ctx, field, obj)
+
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var searchCountResponseImplementors = []string{"SearchCountResponse"}
 
 func (ec *executionContext) _SearchCountResponse(ctx context.Context, sel ast.SelectionSet, obj *model.SearchCountResponse) graphql.Marshaler {
@@ -15862,6 +22445,41 @@ func (ec *executionContext) _SearchResponse(ctx context.Context, sel ast.Selecti
 		case "edge":
 
 			out.Values[i] = ec._SearchResponse_edge(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var statisticsSummaryImplementors = []string{"StatisticsSummary"}
+
+func (ec *executionContext) _StatisticsSummary(ctx context.Context, sel ast.SelectionSet, obj *models.StatisticsSummary) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, statisticsSummaryImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("StatisticsSummary")
+		case "network":
+
+			out.Values[i] = ec._StatisticsSummary_network(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "total":
+
+			out.Values[i] = ec._StatisticsSummary_total(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
 				invalids++
@@ -16416,6 +23034,11 @@ func (ec *executionContext) marshalNBillingAddPacketResponse2ᚖgitlabᚗcomᚋr
 	return ec._BillingAddPacketResponse(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalNBillingHistoryListInput2gitlabᚗcomᚋrubinᚑdevᚋapiᚋinternalᚋgraphᚋmodelᚐBillingHistoryListInput(ctx context.Context, v interface{}) (model.BillingHistoryListInput, error) {
+	res, err := ec.unmarshalInputBillingHistoryListInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) marshalNBillingHistoryListResponse2gitlabᚗcomᚋrubinᚑdevᚋapiᚋinternalᚋgraphᚋmodelᚐBillingHistoryListResponse(ctx context.Context, sel ast.SelectionSet, v model.BillingHistoryListResponse) graphql.Marshaler {
 	return ec._BillingHistoryListResponse(ctx, sel, &v)
 }
@@ -16556,6 +23179,162 @@ func (ec *executionContext) marshalNBillingRequest2ᚖgitlabᚗcomᚋrubinᚑdev
 	return ec._BillingRequest(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNBillingRisk2ᚕᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋpkgᚋmodelsᚐBillingRiskᚄ(ctx context.Context, sel ast.SelectionSet, v []*models.BillingRisk) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNBillingRisk2ᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋpkgᚋmodelsᚐBillingRisk(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNBillingRisk2ᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋpkgᚋmodelsᚐBillingRisk(ctx context.Context, sel ast.SelectionSet, v *models.BillingRisk) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._BillingRisk(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNBillingStatisticsBlockchain2ᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋpkgᚋmodelsᚐBillingStatisticsBlockchain(ctx context.Context, sel ast.SelectionSet, v *models.BillingStatisticsBlockchain) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._BillingStatisticsBlockchain(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNBillingStatisticsCategory2ᚕᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋpkgᚋmodelsᚐBillingStatisticsCategoryᚄ(ctx context.Context, sel ast.SelectionSet, v []*models.BillingStatisticsCategory) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNBillingStatisticsCategory2ᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋpkgᚋmodelsᚐBillingStatisticsCategory(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNBillingStatisticsCategory2ᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋpkgᚋmodelsᚐBillingStatisticsCategory(ctx context.Context, sel ast.SelectionSet, v *models.BillingStatisticsCategory) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._BillingStatisticsCategory(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNBillingStatisticsFilterInput2gitlabᚗcomᚋrubinᚑdevᚋapiᚋinternalᚋgraphᚋmodelᚐBillingStatisticsFilterInput(ctx context.Context, v interface{}) (model.BillingStatisticsFilterInput, error) {
+	res, err := ec.unmarshalInputBillingStatisticsFilterInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNBillingStatisticsResponse2gitlabᚗcomᚋrubinᚑdevᚋapiᚋinternalᚋgraphᚋmodelᚐBillingStatisticsResponse(ctx context.Context, sel ast.SelectionSet, v model.BillingStatisticsResponse) graphql.Marshaler {
+	return ec._BillingStatisticsResponse(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNBillingStatisticsResponse2ᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋinternalᚋgraphᚋmodelᚐBillingStatisticsResponse(ctx context.Context, sel ast.SelectionSet, v *model.BillingStatisticsResponse) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._BillingStatisticsResponse(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNBillingStatisticsRiskRangeInput2gitlabᚗcomᚋrubinᚑdevᚋapiᚋinternalᚋgraphᚋmodelᚐBillingStatisticsRiskRangeInput(ctx context.Context, v interface{}) (model.BillingStatisticsRiskRangeInput, error) {
+	res, err := ec.unmarshalInputBillingStatisticsRiskRangeInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNBillingStatisticsSummaryResponse2gitlabᚗcomᚋrubinᚑdevᚋapiᚋinternalᚋgraphᚋmodelᚐBillingStatisticsSummaryResponse(ctx context.Context, sel ast.SelectionSet, v model.BillingStatisticsSummaryResponse) graphql.Marshaler {
+	return ec._BillingStatisticsSummaryResponse(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNBillingStatisticsSummaryResponse2ᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋinternalᚋgraphᚋmodelᚐBillingStatisticsSummaryResponse(ctx context.Context, sel ast.SelectionSet, v *model.BillingStatisticsSummaryResponse) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._BillingStatisticsSummaryResponse(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNBoolean2bool(ctx context.Context, v interface{}) (bool, error) {
 	res, err := graphql.UnmarshalBoolean(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -16569,6 +23348,60 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) marshalNCalculateItem2ᚕᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋpkgᚋneo4jstoreᚐCalculateItemᚄ(ctx context.Context, sel ast.SelectionSet, v []*neo4jstore.CalculateItem) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNCalculateItem2ᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋpkgᚋneo4jstoreᚐCalculateItem(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNCalculateItem2ᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋpkgᚋneo4jstoreᚐCalculateItem(ctx context.Context, sel ast.SelectionSet, v *neo4jstore.CalculateItem) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._CalculateItem(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNCategory2ᚕᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋpkgᚋmodelsᚐCategoryᚄ(ctx context.Context, sel ast.SelectionSet, v []*models.Category) graphql.Marshaler {
@@ -16644,6 +23477,20 @@ func (ec *executionContext) marshalNCategoryCreateResponse2ᚖgitlabᚗcomᚋrub
 	return ec._CategoryCreateResponse(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNCategoryGroup2gitlabᚗcomᚋrubinᚑdevᚋapiᚋpkgᚋmodelsᚐCategoryGroup(ctx context.Context, sel ast.SelectionSet, v models.CategoryGroup) graphql.Marshaler {
+	return ec._CategoryGroup(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNCategoryGroup2ᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋpkgᚋmodelsᚐCategoryGroup(ctx context.Context, sel ast.SelectionSet, v *models.CategoryGroup) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._CategoryGroup(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNCategoryListResponse2gitlabᚗcomᚋrubinᚑdevᚋapiᚋinternalᚋgraphᚋmodelᚐCategoryListResponse(ctx context.Context, sel ast.SelectionSet, v model.CategoryListResponse) graphql.Marshaler {
 	return ec._CategoryListResponse(ctx, sel, &v)
 }
@@ -16711,6 +23558,10 @@ func (ec *executionContext) marshalNDateTime2string(ctx context.Context, sel ast
 	return res
 }
 
+func (ec *executionContext) marshalNDirectoryI18n2gitlabᚗcomᚋrubinᚑdevᚋapiᚋpkgᚋneo4jstoreᚐDirectoryI18n(ctx context.Context, sel ast.SelectionSet, v neo4jstore.DirectoryI18n) graphql.Marshaler {
+	return ec._DirectoryI18n(ctx, sel, &v)
+}
+
 func (ec *executionContext) marshalNEntity2ᚕᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋpkgᚋelasticᚐEntityᚄ(ctx context.Context, sel ast.SelectionSet, v []*elastic.Entity) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
@@ -16765,6 +23616,50 @@ func (ec *executionContext) marshalNEntity2ᚖgitlabᚗcomᚋrubinᚑdevᚋapi�
 	return ec._Entity(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNFindAddressByHashNodeResponse2gitlabᚗcomᚋrubinᚑdevᚋapiᚋinternalᚋgraphᚋmodelᚐFindAddressByHashNodeResponse(ctx context.Context, sel ast.SelectionSet, v model.FindAddressByHashNodeResponse) graphql.Marshaler {
+	return ec._FindAddressByHashNodeResponse(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNFindAddressByHashNodeResponse2ᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋinternalᚋgraphᚋmodelᚐFindAddressByHashNodeResponse(ctx context.Context, sel ast.SelectionSet, v *model.FindAddressByHashNodeResponse) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._FindAddressByHashNodeResponse(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNFloat2float64(ctx context.Context, v interface{}) (float64, error) {
+	res, err := graphql.UnmarshalFloatContext(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNFloat2float64(ctx context.Context, sel ast.SelectionSet, v float64) graphql.Marshaler {
+	res := graphql.MarshalFloatContext(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+	}
+	return graphql.WrapContextMarshaler(ctx, res)
+}
+
+func (ec *executionContext) unmarshalNID2int(ctx context.Context, v interface{}) (int, error) {
+	res, err := graphql.UnmarshalInt(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNID2int(ctx context.Context, sel ast.SelectionSet, v int) graphql.Marshaler {
+	res := graphql.MarshalInt(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+	}
+	return res
+}
+
 func (ec *executionContext) unmarshalNID2int64(ctx context.Context, v interface{}) (int64, error) {
 	res, err := graphql.UnmarshalInt64(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -16793,6 +23688,38 @@ func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.Selecti
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) unmarshalNInt2ᚕintᚄ(ctx context.Context, v interface{}) ([]int, error) {
+	var vSlice []interface{}
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]int, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNInt2int(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalNInt2ᚕintᚄ(ctx context.Context, sel ast.SelectionSet, v []int) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNInt2int(ctx, sel, v[i])
+	}
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) unmarshalNInt642int64(ctx context.Context, v interface{}) (int64, error) {
@@ -16829,7 +23756,7 @@ func (ec *executionContext) marshalNLoginResponse2ᚖgitlabᚗcomᚋrubinᚑdev�
 	return ec._LoginResponse(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNNode2ᚕᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋpkgᚋneoutilsᚐNodeᚄ(ctx context.Context, sel ast.SelectionSet, v []*neoutils.Node) graphql.Marshaler {
+func (ec *executionContext) marshalNNode2ᚕᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋpkgᚋneo4jstoreᚐNodeᚄ(ctx context.Context, sel ast.SelectionSet, v []*neo4jstore.Node) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -16853,7 +23780,7 @@ func (ec *executionContext) marshalNNode2ᚕᚖgitlabᚗcomᚋrubinᚑdevᚋapi�
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNNode2ᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋpkgᚋneoutilsᚐNode(ctx, sel, v[i])
+			ret[i] = ec.marshalNNode2ᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋpkgᚋneo4jstoreᚐNode(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -16873,7 +23800,7 @@ func (ec *executionContext) marshalNNode2ᚕᚖgitlabᚗcomᚋrubinᚑdevᚋapi�
 	return ret
 }
 
-func (ec *executionContext) marshalNNode2ᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋpkgᚋneoutilsᚐNode(ctx context.Context, sel ast.SelectionSet, v *neoutils.Node) graphql.Marshaler {
+func (ec *executionContext) marshalNNode2ᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋpkgᚋneo4jstoreᚐNode(ctx context.Context, sel ast.SelectionSet, v *neo4jstore.Node) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
@@ -16881,20 +23808,6 @@ func (ec *executionContext) marshalNNode2ᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋp
 		return graphql.Null
 	}
 	return ec._Node(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalNNodeCountResponse2gitlabᚗcomᚋrubinᚑdevᚋapiᚋinternalᚋgraphᚋmodelᚐNodeCountResponse(ctx context.Context, sel ast.SelectionSet, v model.NodeCountResponse) graphql.Marshaler {
-	return ec._NodeCountResponse(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNNodeCountResponse2ᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋinternalᚋgraphᚋmodelᚐNodeCountResponse(ctx context.Context, sel ast.SelectionSet, v *model.NodeCountResponse) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
-		}
-		return graphql.Null
-	}
-	return ec._NodeCountResponse(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNNodeEntityResponse2gitlabᚗcomᚋrubinᚑdevᚋapiᚋinternalᚋgraphᚋmodelᚐNodeEntityResponse(ctx context.Context, sel ast.SelectionSet, v model.NodeEntityResponse) graphql.Marshaler {
@@ -17025,6 +23938,20 @@ func (ec *executionContext) marshalNRestoreResponse2ᚖgitlabᚗcomᚋrubinᚑde
 	return ec._RestoreResponse(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNRiskResponse2gitlabᚗcomᚋrubinᚑdevᚋapiᚋinternalᚋgraphᚋmodelᚐRiskResponse(ctx context.Context, sel ast.SelectionSet, v model.RiskResponse) graphql.Marshaler {
+	return ec._RiskResponse(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNRiskResponse2ᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋinternalᚋgraphᚋmodelᚐRiskResponse(ctx context.Context, sel ast.SelectionSet, v *model.RiskResponse) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._RiskResponse(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNSearchCountResponse2gitlabᚗcomᚋrubinᚑdevᚋapiᚋinternalᚋgraphᚋmodelᚐSearchCountResponse(ctx context.Context, sel ast.SelectionSet, v model.SearchCountResponse) graphql.Marshaler {
 	return ec._SearchCountResponse(ctx, sel, &v)
 }
@@ -17051,6 +23978,65 @@ func (ec *executionContext) marshalNSearchResponse2ᚖgitlabᚗcomᚋrubinᚑdev
 		return graphql.Null
 	}
 	return ec._SearchResponse(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNStatisticsSummary2ᚕᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋpkgᚋmodelsᚐStatisticsSummaryᚄ(ctx context.Context, sel ast.SelectionSet, v []*models.StatisticsSummary) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNStatisticsSummary2ᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋpkgᚋmodelsᚐStatisticsSummary(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNStatisticsSummary2ᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋpkgᚋmodelsᚐStatisticsSummary(ctx context.Context, sel ast.SelectionSet, v *models.StatisticsSummary) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._StatisticsSummary(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNStatisticsSummaryInput2gitlabᚗcomᚋrubinᚑdevᚋapiᚋinternalᚋgraphᚋmodelᚐStatisticsSummaryInput(ctx context.Context, v interface{}) (model.StatisticsSummaryInput, error) {
+	res, err := ec.unmarshalInputStatisticsSummaryInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalNString2string(ctx context.Context, v interface{}) (string, error) {
@@ -17474,6 +24460,13 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 	return res
 }
 
+func (ec *executionContext) marshalOCalculatedRisk2ᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋpkgᚋneo4jstoreᚐCalculatedRisk(ctx context.Context, sel ast.SelectionSet, v *neo4jstore.CalculatedRisk) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._CalculatedRisk(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalOCategory2ᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋpkgᚋmodelsᚐCategory(ctx context.Context, sel ast.SelectionSet, v *models.Category) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
@@ -17481,11 +24474,83 @@ func (ec *executionContext) marshalOCategory2ᚖgitlabᚗcomᚋrubinᚑdevᚋapi
 	return ec._Category(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalOCategoryGroup2ᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋpkgᚋmodelsᚐCategoryGroup(ctx context.Context, sel ast.SelectionSet, v *models.CategoryGroup) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._CategoryGroup(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalOCategoryRemoveResponse2ᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋinternalᚋgraphᚋmodelᚐCategoryRemoveResponse(ctx context.Context, sel ast.SelectionSet, v *model.CategoryRemoveResponse) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._CategoryRemoveResponse(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalODate2ᚖstring(ctx context.Context, v interface{}) (*string, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := graphql.UnmarshalString(v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalODate2ᚖstring(ctx context.Context, sel ast.SelectionSet, v *string) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	res := graphql.MarshalString(*v)
+	return res
+}
+
+func (ec *executionContext) marshalOFindAddressByHashNode2ᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋpkgᚋneo4jstoreᚐFindAddressByHashNode(ctx context.Context, sel ast.SelectionSet, v *neo4jstore.FindAddressByHashNode) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._FindAddressByHashNode(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOFloat2float64(ctx context.Context, v interface{}) (float64, error) {
+	res, err := graphql.UnmarshalFloatContext(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOFloat2float64(ctx context.Context, sel ast.SelectionSet, v float64) graphql.Marshaler {
+	res := graphql.MarshalFloatContext(v)
+	return graphql.WrapContextMarshaler(ctx, res)
+}
+
+func (ec *executionContext) unmarshalOFloat2ᚖfloat64(ctx context.Context, v interface{}) (*float64, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := graphql.UnmarshalFloatContext(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOFloat2ᚖfloat64(ctx context.Context, sel ast.SelectionSet, v *float64) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	res := graphql.MarshalFloatContext(*v)
+	return graphql.WrapContextMarshaler(ctx, res)
+}
+
+func (ec *executionContext) unmarshalOID2ᚖint64(ctx context.Context, v interface{}) (*int64, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := graphql.UnmarshalInt64(v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOID2ᚖint64(ctx context.Context, sel ast.SelectionSet, v *int64) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	res := graphql.MarshalInt64(*v)
+	return res
 }
 
 func (ec *executionContext) unmarshalOInt2ᚖint(ctx context.Context, v interface{}) (*int, error) {
@@ -17511,11 +24576,25 @@ func (ec *executionContext) marshalOJwt2ᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋpk
 	return ec._Jwt(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalONode2ᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋpkgᚋneoutilsᚐNode(ctx context.Context, sel ast.SelectionSet, v *neoutils.Node) graphql.Marshaler {
+func (ec *executionContext) marshalONode2ᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋpkgᚋneo4jstoreᚐNode(ctx context.Context, sel ast.SelectionSet, v *neo4jstore.Node) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._Node(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalORisk2ᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋpkgᚋneo4jstoreᚐRisk(ctx context.Context, sel ast.SelectionSet, v *neo4jstore.Risk) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Risk(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalORiskData2ᚖgitlabᚗcomᚋrubinᚑdevᚋapiᚋpkgᚋneo4jstoreᚐRiskData(ctx context.Context, sel ast.SelectionSet, v *neo4jstore.RiskData) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._RiskData(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOString2ᚕstringᚄ(ctx context.Context, v interface{}) ([]string, error) {

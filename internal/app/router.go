@@ -31,7 +31,10 @@ func (app *App) createRouter(router *mux.Router) *mux.Router {
 	app.createGraphqlRouter(router)
 
 	router.HandleFunc("/api/v1/{network}/risk/{address}", app.riskHandler)
+	router.HandleFunc("/api/v1/statistics", app.statisticsHandler)
 	router.HandleFunc("/api/v1/category", app.categoryHandler)
+
+	router.HandleFunc("/health", app.healthcheckHandler)
 
 	return router
 }

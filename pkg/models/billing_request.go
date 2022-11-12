@@ -7,20 +7,25 @@ import (
 )
 
 type BillingRequest struct {
-	bun.BaseModel `bun:"billing_request,alias:br"`
+	bun.BaseModel `bun:"billing_request,alias:billing_request"`
 	ID            int64     `bun:"id,pk,autoincrement" json:"id"`
 	UserID        int64     `bun:"user_id,notnull" json:"user_id"`
 	Query         string    `bun:"query,notnull" json:"query"`
-	Risk          int       `bun:"risk,notnull" json:"risk"`
-	Category      string    `bun:"category,notnull" json:"category"`
+	Risk          float64   `bun:"risk" json:"risk"`
+	IsReported    bool      `bun:"is_reported,notnull" json:"is_reported"`
+	IsWallet      bool      `bun:"is_wallet,notnull" json:"is_wallet"`
+	IsCalculated  bool      `bun:"is_calculated,notnull" json:"is_calculated"`
 	Network       string    `bun:"network,notnull" json:"network"`
-	CreatedAt     time.Time `bun:",nullzero,notnull,default:current_timestamp" json:"created_at"`
+	Last          bool      `bun:"last,notnull" json:"last"`
+	CreatedAt     time.Time `bun:"created_at,nullzero,notnull,type:timestamp" json:"created_at"`
 }
 
 func (u *BillingRequest) BeforeAppendModel(ctx context.Context, query bun.Query) error {
 	switch query.(type) {
 	case *bun.InsertQuery:
-		u.CreatedAt = time.Now()
+		if u.CreatedAt.IsZero() {
+			u.CreatedAt = time.Now()
+		}
 	}
 	return nil
 }

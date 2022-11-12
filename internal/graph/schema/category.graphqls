@@ -1,14 +1,21 @@
+type CategoryGroup {
+    id: Int!
+    nameRu: String!
+    nameEn: String!
+}
+
 type Category {
     id: ID!
+    number: Int!
     name: String!
     descriptionRu: String!
     descriptionEn: String!
     risk: Int!
+    categoryGroup: CategoryGroup
 }
 
 type CategoryListResponse {
     errors: Any
-    total: Int
     edge: [Category!]!
 }
 
@@ -28,21 +35,26 @@ type CategoryRemoveResponse {
 
 input CategoryCreateInput {
     name: String!
+    number: Int!
     descriptionRu: String!
     descriptionEn: String!
     risk: Int!
+    categoryGroupId: Int
 }
 
 input CategoryUpdateInput {
     name: String
+    number: Int
     descriptionRu: String
     descriptionEn: String
     risk: Int
+    categoryGroupId: Int
 }
 
 extend type Query {
-    categoryList: CategoryListResponse! @auth(permissions: ["category"])
-    categoryFindById(id: ID!): Category @auth(permissions: ["category"])
+    categoryList(id: ID): CategoryListResponse!
+    categoryAllList: CategoryListResponse!
+    categoryFindById(id: ID!): Category
 }
 
 extend type Mutation {

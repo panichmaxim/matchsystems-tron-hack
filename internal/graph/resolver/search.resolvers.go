@@ -10,8 +10,8 @@ import (
 	"gitlab.com/rubin-dev/api/pkg/validator"
 )
 
-func (r *queryResolver) Search(ctx context.Context, query string, page int, limit int) (*model.SearchResponse, error) {
-	items, total, err := r.svc.Search(ctx, query, page, limit)
+func (r *queryResolver) Search(ctx context.Context, query string, page int, limit int, wildcard bool) (*model.SearchResponse, error) {
+	items, total, err := r.svc.Search(ctx, query, page, limit, wildcard)
 	if err != nil {
 		if errs, ok := err.(validator.Errors); ok {
 			return &model.SearchResponse{Errors: errs}, nil
@@ -22,8 +22,8 @@ func (r *queryResolver) Search(ctx context.Context, query string, page int, limi
 	return &model.SearchResponse{Edge: items, Total: &total}, nil
 }
 
-func (r *queryResolver) SearchCount(ctx context.Context, query string) (*model.SearchCountResponse, error) {
-	items, err := r.svc.SearchCount(ctx, query)
+func (r *queryResolver) SearchCount(ctx context.Context, query string, wildcard bool) (*model.SearchCountResponse, error) {
+	items, err := r.svc.SearchCount(ctx, query, wildcard)
 	if err != nil {
 		if errs, ok := err.(validator.Errors); ok {
 			return &model.SearchCountResponse{Errors: errs}, nil

@@ -2,148 +2,159 @@ package service
 
 import (
 	"context"
-	"gitlab.com/rubin-dev/api/pkg/btcstore"
-	"gitlab.com/rubin-dev/api/pkg/neoutils"
+	"gitlab.com/rubin-dev/api/pkg/neo4jstore"
 )
 
 var _ BtcNeoService = (*serviceImpl)(nil)
 
 type BtcNeoService interface {
-	btcstore.Store
+	BtcHealth(ctx context.Context) error
+	BtcRisk(ctx context.Context, address string) (*neo4jstore.Risk, error)
+	BtcFindContactByAddress(ctx context.Context, address string) (*neo4jstore.Node, error)
+	BtcFindAddressByHash(ctx context.Context, address string) (*neo4jstore.FindAddressByHashNode, error)
+	BtcFindTransactionsByAddress(ctx context.Context, address string, page, pageSize int) ([]*neo4jstore.Node, int, error)
+	BtcFindMentionsForAddress(ctx context.Context, address string, page, pageSize int) ([]*neo4jstore.Node, int, error)
+	BtcFindTransactionByHash(ctx context.Context, address string) (*neo4jstore.Node, error)
+	BtcFindIncomingTransactions(ctx context.Context, txid string, page, pageSize int) ([]*neo4jstore.Node, int, error)
+	BtcFindOutcomingTransactions(ctx context.Context, txid string, page, pageSize int) ([]*neo4jstore.Node, int, error)
+	BtcFindBlockByTransaction(ctx context.Context, txid string) (*neo4jstore.Node, error)
+	BtcFindBlockByHeight(ctx context.Context, height int) (*neo4jstore.Node, error)
+	BtcFindTransactionsInBlock(ctx context.Context, height int, page, pageSize int) ([]*neo4jstore.Node, int, error)
+	BtcFindBlockByHash(ctx context.Context, hash string) (*neo4jstore.Node, error)
+	BtcFindWalletForAddress(ctx context.Context, address string) (*neo4jstore.Node, error)
+	BtcFindWalletByWid(ctx context.Context, wid string) (*neo4jstore.Node, error)
+	BtcFindWalletAddresses(ctx context.Context, wid string, page, pageSize int) ([]*neo4jstore.Node, int, error)
+	BtcFindTransactionsInBlockByHash(ctx context.Context, hash string, page, pageSize int) ([]*neo4jstore.Node, int, error)
 }
 
-func (s *serviceImpl) BtcFindContactByAddress(ctx context.Context, address string) (*neoutils.Node, error) {
-	if err := s.v.FindContactByAddress(ctx, address); err != nil {
+func (s *serviceImpl) BtcHealth(ctx context.Context) error {
+	return s.btcneo.Health(ctx)
+}
+
+func (s *serviceImpl) BtcFindContactByAddress(ctx context.Context, address string) (*neo4jstore.Node, error) {
+	if err := s.v.BtcFindContactByAddress(ctx, address); err != nil {
 		return nil, err
 	}
 
-	return s.btcneo.BtcFindContactByAddress(ctx, address)
+	return s.btcneo.FindContactByAddress(ctx, address)
 }
 
-func (s *serviceImpl) BtcFindAddressByHash(ctx context.Context, address string) (*neoutils.Node, error) {
-	if err := s.v.FindAddressByHash(ctx, address); err != nil {
+func (s *serviceImpl) BtcFindAddressByHash(ctx context.Context, address string) (*neo4jstore.FindAddressByHashNode, error) {
+	if err := s.v.BtcFindAddressByHash(ctx, address); err != nil {
 		return nil, err
 	}
 
-	return s.btcneo.BtcFindAddressByHash(ctx, address)
+	return s.btcneo.FindAddressByHash(ctx, address)
 }
 
-func (s *serviceImpl) BtcFindTransactionsByAddress(ctx context.Context, address string, page, pageSize int) ([]*neoutils.Node, int, error) {
-	if err := s.v.FindTransactionsByAddress(ctx, address, page, pageSize); err != nil {
+func (s *serviceImpl) BtcFindTransactionsByAddress(ctx context.Context, address string, page, pageSize int) ([]*neo4jstore.Node, int, error) {
+	if err := s.v.BtcFindTransactionsByAddress(ctx, address, page, pageSize); err != nil {
 		return nil, 0, err
 	}
 
-	return s.btcneo.BtcFindTransactionsByAddress(ctx, address, page, pageSize)
+	return s.btcneo.FindTransactionsByAddress(ctx, address, page, pageSize)
 }
 
-func (s *serviceImpl) BtcFindWalletForAddress(ctx context.Context, address string) (*neoutils.Node, error) {
-	if err := s.v.FindWalletForAddress(ctx, address); err != nil {
+func (s *serviceImpl) BtcFindWalletForAddress(ctx context.Context, address string) (*neo4jstore.Node, error) {
+	if err := s.v.BtcFindWalletForAddress(ctx, address); err != nil {
 		return nil, err
 	}
 
-	return s.btcneo.BtcFindWalletForAddress(ctx, address)
+	return s.btcneo.FindWalletForAddress(ctx, address)
 }
 
-func (s *serviceImpl) BtcFindMentionsForAddress(ctx context.Context, address string, page, pageSize int) ([]*neoutils.Node, int, error) {
-	if err := s.v.FindMentionsForAddress(ctx, address, page, pageSize); err != nil {
+func (s *serviceImpl) BtcFindMentionsForAddress(ctx context.Context, address string, page, pageSize int) ([]*neo4jstore.Node, int, error) {
+	if err := s.v.BtcFindMentionsForAddress(ctx, address, page, pageSize); err != nil {
 		return nil, 0, err
 	}
 
-	return s.btcneo.BtcFindMentionsForAddress(ctx, address, page, pageSize)
+	return s.btcneo.FindMentionsForAddress(ctx, address, page, pageSize)
 }
 
-func (s *serviceImpl) BtcFindRiskScore(ctx context.Context, address string) (*neoutils.Node, error) {
-	if err := s.v.FindRiskScore(ctx, address); err != nil {
+func (s *serviceImpl) BtcRisk(ctx context.Context, address string) (*neo4jstore.Risk, error) {
+	if err := s.v.BtcFindRiskScore(ctx, address); err != nil {
 		return nil, err
 	}
 
-	return s.btcneo.BtcFindRiskScore(ctx, address)
+	return s.btcneo.Risk(ctx, address)
 }
 
-func (s *serviceImpl) BtcFindTransactionByHash(ctx context.Context, address string) (*neoutils.Node, error) {
-	if err := s.v.FindTransactionByHash(ctx, address); err != nil {
+func (s *serviceImpl) BtcFindTransactionByHash(ctx context.Context, address string) (*neo4jstore.Node, error) {
+	if err := s.v.BtcFindTransactionByHash(ctx, address); err != nil {
 		return nil, err
 	}
 
-	return s.btcneo.BtcFindTransactionByHash(ctx, address)
+	return s.btcneo.FindTransactionByHash(ctx, address)
 }
 
-func (s *serviceImpl) BtcFindIncomingTransactions(ctx context.Context, txid string, page, pageSize int) ([]*neoutils.Node, int, error) {
-	if err := s.v.FindIncomingTransactions(ctx, txid, page, pageSize); err != nil {
+func (s *serviceImpl) BtcFindIncomingTransactions(ctx context.Context, txid string, page, pageSize int) ([]*neo4jstore.Node, int, error) {
+	if err := s.v.BtcFindIncomingTransactions(ctx, txid, page, pageSize); err != nil {
 		return nil, 0, err
 	}
 
-	return s.btcneo.BtcFindIncomingTransactions(ctx, txid, page, pageSize)
+	return s.btcneo.FindIncomingTransactions(ctx, txid, page, pageSize)
 }
 
-func (s *serviceImpl) BtcFindOutcomingTransactions(ctx context.Context, txid string, page, pageSize int) ([]*neoutils.Node, int, error) {
-	if err := s.v.FindOutcomingTransactions(ctx, txid, page, pageSize); err != nil {
+func (s *serviceImpl) BtcFindOutcomingTransactions(ctx context.Context, txid string, page, pageSize int) ([]*neo4jstore.Node, int, error) {
+	if err := s.v.BtcFindOutcomingTransactions(ctx, txid, page, pageSize); err != nil {
 		return nil, 0, err
 	}
 
-	return s.btcneo.BtcFindOutcomingTransactions(ctx, txid, page, pageSize)
+	return s.btcneo.FindOutcomingTransactions(ctx, txid, page, pageSize)
 }
 
-func (s *serviceImpl) BtcFindBlockByTransaction(ctx context.Context, txid string) (*neoutils.Node, error) {
-	if err := s.v.FindBlockByTransaction(ctx, txid); err != nil {
+func (s *serviceImpl) BtcFindBlockByTransaction(ctx context.Context, txid string) (*neo4jstore.Node, error) {
+	if err := s.v.BtcFindBlockByTransaction(ctx, txid); err != nil {
 		return nil, err
 	}
 
-	return s.btcneo.BtcFindBlockByTransaction(ctx, txid)
+	return s.btcneo.FindBlockByTransaction(ctx, txid)
 }
 
-func (s *serviceImpl) BtcFindBlockByNumber(ctx context.Context, height int) (*neoutils.Node, error) {
-	if err := s.v.FindBlockByNumber(ctx, height); err != nil {
+func (s *serviceImpl) BtcFindBlockByHeight(ctx context.Context, height int) (*neo4jstore.Node, error) {
+	if err := s.v.BtcFindBlockByNumber(ctx, height); err != nil {
 		return nil, err
 	}
 
-	return s.btcneo.BtcFindBlockByNumber(ctx, height)
+	return s.btcneo.FindBlockByHeight(ctx, height)
 }
 
-func (s *serviceImpl) BtcFindTransactionsInBlock(ctx context.Context, height int, page, pageSize int) ([]*neoutils.Node, int, error) {
-	if err := s.v.FindTransactionsInBlock(ctx, height, page, pageSize); err != nil {
+func (s *serviceImpl) BtcFindTransactionsInBlock(ctx context.Context, height int, page, pageSize int) ([]*neo4jstore.Node, int, error) {
+	if err := s.v.BtcFindTransactionsInBlock(ctx, height, page, pageSize); err != nil {
 		return nil, 0, err
 	}
 
-	return s.btcneo.BtcFindTransactionsInBlock(ctx, height, page, pageSize)
+	return s.btcneo.FindTransactionsInBlock(ctx, height, page, pageSize)
 }
 
-func (s *serviceImpl) BtcFindAllInputAndOutputByTransaction(ctx context.Context, txid string, page, pageSize int) ([]*neoutils.Node, int, error) {
-	if err := s.v.FindAllInputAndOutputByTransaction(ctx, txid, page, pageSize); err != nil {
-		return nil, 0, err
-	}
-
-	return s.btcneo.BtcFindAllInputAndOutputByTransaction(ctx, txid, page, pageSize)
-}
-
-func (s *serviceImpl) BtcFindBlockByHash(ctx context.Context, hash string) (*neoutils.Node, error) {
-	if err := s.v.FindBlockByHash(ctx, hash); err != nil {
+func (s *serviceImpl) BtcFindBlockByHash(ctx context.Context, hash string) (*neo4jstore.Node, error) {
+	if err := s.v.BtcFindBlockByHash(ctx, hash); err != nil {
 		return nil, err
 	}
 
-	return s.btcneo.BtcFindBlockByHash(ctx, hash)
+	return s.btcneo.FindBlockByHash(ctx, hash)
 }
 
-func (s *serviceImpl) BtcFindTransactionsInBlockByHash(ctx context.Context, hash string, page, pageSize int) ([]*neoutils.Node, int, error) {
-	if err := s.v.FindTransactionsInBlockByHash(ctx, hash, page, pageSize); err != nil {
+func (s *serviceImpl) BtcFindTransactionsInBlockByHash(ctx context.Context, hash string, page, pageSize int) ([]*neo4jstore.Node, int, error) {
+	if err := s.v.BtcFindTransactionsInBlockByHash(ctx, hash, page, pageSize); err != nil {
 		return nil, 0, err
 	}
 
-	return s.btcneo.BtcFindTransactionsInBlockByHash(ctx, hash, page, pageSize)
+	return s.btcneo.FindTransactionsInBlockByHash(ctx, hash, page, pageSize)
 }
 
-func (s *serviceImpl) BtcFindWalletByWid(ctx context.Context, wid string) (*neoutils.Node, error) {
-	if err := s.v.FindWalletByWid(ctx, wid); err != nil {
+func (s *serviceImpl) BtcFindWalletByWid(ctx context.Context, wid string) (*neo4jstore.Node, error) {
+	if err := s.v.BtcFindWalletByWid(ctx, wid); err != nil {
 		return nil, err
 	}
 
-	return s.btcneo.BtcFindWalletByWid(ctx, wid)
+	return s.btcneo.FindWalletByWid(ctx, wid)
 }
 
-func (s *serviceImpl) BtcFindWalletAddresses(ctx context.Context, wid string, page, pageSize int) ([]*neoutils.Node, int, error) {
-	if err := s.v.FindWalletAddresses(ctx, wid, page, pageSize); err != nil {
+func (s *serviceImpl) BtcFindWalletAddresses(ctx context.Context, wid string, page, pageSize int) ([]*neo4jstore.Node, int, error) {
+	if err := s.v.BtcFindWalletAddresses(ctx, wid, page, pageSize); err != nil {
 		return nil, 0, err
 	}
 
-	return s.btcneo.BtcFindWalletAddresses(ctx, wid, page, pageSize)
+	return s.btcneo.FindWalletAddresses(ctx, wid, page, pageSize)
 }

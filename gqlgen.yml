@@ -14,17 +14,43 @@ autobind:
   - "gitlab.com/rubin-dev/api/internal/graph/model"
 models:
   Node:
-    model: gitlab.com/rubin-dev/api/pkg/neoutils.Node
+    model: gitlab.com/rubin-dev/api/pkg/neo4jstore.Node
+  FindAddressByHashNode:
+    model: gitlab.com/rubin-dev/api/pkg/neo4jstore.FindAddressByHashNode
   Entity:
     model: gitlab.com/rubin-dev/api/pkg/elastic.Entity
+  RiskData:
+    model: gitlab.com/rubin-dev/api/pkg/neo4jstore.RiskData
+  Risk:
+    model: gitlab.com/rubin-dev/api/pkg/neo4jstore.Risk
+  DirectoryI18n:
+    model: gitlab.com/rubin-dev/api/pkg/neo4jstore.DirectoryI18n
+  CalculatedRisk:
+    model: gitlab.com/rubin-dev/api/pkg/neo4jstore.CalculatedRisk
+  CalculateItem:
+    model: gitlab.com/rubin-dev/api/pkg/neo4jstore.CalculateItem
+  BillingStatisticsBlockchain:
+    model: gitlab.com/rubin-dev/api/pkg/models.BillingStatisticsBlockchain
+  BillingStatisticsRisk:
+    model: gitlab.com/rubin-dev/api/pkg/models.BillingStatisticsRisk
+  BillingStatisticsCategory:
+    model: gitlab.com/rubin-dev/api/pkg/models.BillingStatisticsCategory
+  BillingStatistics:
+    model: gitlab.com/rubin-dev/api/pkg/models.BillingStatistics
   Category:
     model: gitlab.com/rubin-dev/api/pkg/models.Category
+  CategoryGroup:
+    model: gitlab.com/rubin-dev/api/pkg/models.CategoryGroup
   BillingRequest:
     model: gitlab.com/rubin-dev/api/pkg/models.BillingRequest
   BillingPacket:
     model: gitlab.com/rubin-dev/api/pkg/models.BillingPacket
+  StatisticsSummary:
+    model: gitlab.com/rubin-dev/api/pkg/models.StatisticsSummary
   BillingKey:
     model: gitlab.com/rubin-dev/api/pkg/models.BillingKey
+  BillingRisk:
+    model: gitlab.com/rubin-dev/api/pkg/models.BillingRisk
   User:
     model: gitlab.com/rubin-dev/api/pkg/models.User
   Jwt:

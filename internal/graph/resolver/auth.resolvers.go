@@ -6,6 +6,7 @@ package resolver
 import (
 	"context"
 	"errors"
+	"strings"
 
 	"gitlab.com/rubin-dev/api/internal/graph/model"
 	"gitlab.com/rubin-dev/api/pkg/models"
@@ -15,7 +16,7 @@ import (
 
 func (r *mutationResolver) Login(ctx context.Context, input model.LoginInput) (*model.LoginResponse, error) {
 	resp, err := r.svc.Login(ctx, &models.LoginRequest{
-		Email:    input.Email,
+		Email:    strings.TrimSpace(input.Email),
 		Password: input.Password,
 	})
 	if err != nil {
@@ -96,7 +97,7 @@ func (r *mutationResolver) RestoreConfirm(ctx context.Context, input model.Resto
 
 func (r *mutationResolver) Registration(ctx context.Context, input model.RegistrationInput) (*model.RegistrationResponse, error) {
 	_, err := r.svc.Registration(ctx, &models.RegistrationRequest{
-		Email:           input.Email,
+		Email:           strings.TrimSpace(input.Email),
 		Password:        input.Password,
 		PasswordConfirm: input.PasswordConfirm,
 		Name:            input.Name,

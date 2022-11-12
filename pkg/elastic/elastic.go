@@ -20,9 +20,7 @@ func NewElastic(addresses []string) (Client, error) {
 		return nil, err
 	}
 
-	return &elasticImpl{
-		es: es,
-	}, nil
+	return &elasticImpl{es: es}, nil
 }
 
 type elasticImpl struct {

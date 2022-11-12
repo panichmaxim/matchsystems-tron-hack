@@ -6,6 +6,7 @@ type DistributedConfig struct {
 	Database   DatabaseConfig
 	BtcNeo     BtcNeo4jConfig
 	EthNeo     EthNeo4jConfig
+	TronNeo    TronNeo4jConfig
 	Elastic    ElasticConfig
 	Uptrace    UptraceConfig
 	Mailgun    MailgunConfig

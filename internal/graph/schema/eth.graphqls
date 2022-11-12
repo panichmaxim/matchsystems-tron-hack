@@ -1,15 +1,15 @@
 extend type Query {
-    ethFindAddressByHash(address: String!): NodeEntityResponse!
+    ethFindAddressByHash(address: String!): FindAddressByHashNodeResponse!
     ethFindTransactionsByAddress(hash: String!, page: Int!, pageSize: Int!): NodeListResponse!
     ethFindTransactionByHash(hash: String!): NodeEntityResponse!
-    ethFindIncomingTransactionAddress(hash: String!): NodeEntityResponse!
-    ethFindOutcomingTransactionAddress(hash: String!): NodeEntityResponse!
+    ethFindIncomingTransactionAddress(hash: String!, page: Int!, pageSize: Int!): NodeListResponse!
+    ethFindOutcomingTransactionAddress(hash: String!, page: Int!, pageSize: Int!): NodeListResponse!
     ethFindBlockByTransaction(hash: String!): NodeEntityResponse!
-    ethFindBlockByHeight(height: String!): NodeEntityResponse!
-    ethFindTransactionsInBlock(height: String!, page: Int!, pageSize: Int!): NodeListResponse!
-    ethFindAllInputAndOutputTransactions(hash: String!, page: Int!, pageSize: Int!): NodeListResponse!
+    ethFindBlockByHeight(height: Int!): NodeEntityResponse!
+    ethFindTransactionsInBlock(height: Int!, page: Int!, pageSize: Int!): NodeListResponse!
     ethFindBlockByHash(hash: String!): NodeEntityResponse!
-    ethFindMentionsByAddress(address: String!, page: Int!, pageSize: Int!): NodeListResponse!
-    ethFindContactByAddress(address: String!): NodeEntityResponse!
-    ethFindRiskScoreByAddress(address: String!): NodeEntityResponse!
+    ethFindMentionsByAddress(address: String!, page: Int!, pageSize: Int!): NodeListResponse! @auth(permissions: ["subscription.explorer.mentions"])
+    ethFindContactByAddress(address: String!): NodeEntityResponse! @auth(permissions: ["subscription.explorer.contacts"])
+    ethRisk(address: String!): RiskResponse! @auth(permissions: ["subscription.explorer.riskscore"])
+    ethSearch(query: String!, page: Int! = 0, limit: Int! = 100, wildcard: Boolean): SearchResponse! @auth(permissions: ["subscription.explorer.mentions"])
 }

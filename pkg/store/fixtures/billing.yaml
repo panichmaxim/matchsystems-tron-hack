@@ -1,0 +1,41 @@
+- model: User
+  rows:
+    - _id: user
+      name: admin
+      email: admin@example.com
+      is_active: true
+      password: $2a$14$RDkA8108s4dE53APoGJk.uC2/nhR6f6wf08h8HDcavkD4BGKlYL.2
+      permissions:
+        - admin
+- model: BillingRequest
+  rows:
+    - user_id: '{{ $.User.user.ID }}'
+      query: "now"
+      network: "btc"
+      created_at: "{{ now }}"
+      last: false
+    - user_id: '{{ $.User.user.ID }}'
+      query: "now"
+      network: "btc"
+      created_at: "{{ now }}"
+      last: true
+    - user_id: '{{ $.User.user.ID }}'
+      query: "prev_day"
+      network: "btc"
+      created_at: "{{ prev_day }}"
+      last: true
+    - user_id: '{{ $.User.user.ID }}'
+      query: "next_day"
+      network: "btc"
+      created_at: "{{ next_day }}"
+      last: true
+    - user_id: '{{ $.User.user.ID }}'
+      query: "next_week"
+      network: "btc"
+      created_at: "{{ next_week }}"
+      last: true
+    - user_id: '{{ $.User.user.ID }}'
+      query: "prev_week"
+      network: "btc"
+      created_at: "{{ prev_week }}"
+      last: true

@@ -1,0 +1,434 @@
+- model: Category
+  rows:
+  - name: Corruption
+    risk: 100
+    description_ru: Коррупция
+    description_en: Corruption
+    category_group_id: 10
+    number: 39
+  - name: Hight Risk country
+    risk: 90
+    description_ru: Серый список ФАТФ и сервисы
+    description_en: FATF gray list and services of these countries
+    category_group_id: 10
+    number: 58
+  - name: Stolen Coins
+    risk: 100
+    description_ru: Украденные криптовалютные активы
+    description_en: Stolen cryptocurrency assets
+    category_group_id: 1
+    number: 52
+  - name: Personal data RU
+    risk: 100
+    description_ru: Продажа персональных данных граждан РФ
+    description_en: Sale of personal data of citizens of the Russian Federation
+    category_group_id: 3
+    number: 9
+  - name: Online Marketplace
+    risk: 50
+    description_ru: Маркетплейс
+    description_en: Marketplace
+    category_group_id: 6
+    number: 36
+  - name: P2P Exchange With Low ML Risk
+    risk: 25
+    description_ru: Оператор P2P-обмена с низким риском отмывания средств
+    description_en: P2P exchange operator with low risk of money laundering
+    category_group_id: 7
+    number: 43
+  - name: Drugs
+    risk: 100
+    description_ru: Отдельный участник high-risk деятельности конкретно в сфере наркотиков
+    description_en: An individual participant in high-risk drugs activities
+    category_group_id: 2
+    number: 3
+  - name: China precursors manufacturing
+    risk: 85
+    description_ru: Производитель прекурсоров из Китая
+    description_en: Precursor manufacturer from China
+    category_group_id: 2
+    number: 5
+  - name: Personal data EU
+    risk: 100
+    description_ru: Продажа персональных данных граждан ЕС
+    description_en: Sale of personal data of EU citizens
+    category_group_id: 3
+    number: 11
+  - name: Smuggling drugs
+    risk: 100
+    description_ru: Участник контрабанды наркотиков
+    description_en: Participant in drug smuggling
+    category_group_id: 2
+    number: 15
+  - name: Fake document rendering
+    risk: 100
+    description_ru: Отрисовка документов
+    description_en: Manufacture of forged documents (not renderings, but physical documents)
+    category_group_id: 3
+    number: 23
+  - name: Darknet Service
+    risk: 100
+    description_ru: Отдельный участник high-risk деятельности
+    description_en: An individual participant in a high-risk activity
+    category_group_id: 12
+    number: 2
+  - name: Fake documents
+    risk: 100
+    description_ru: Изготовление поддельных документов (не отрисовки, а именно физические документы)
+    description_en: Making fake documents (not renderings, but physical documents)
+    category_group_id: 3
+    number: 22
+  - name: Laundering of money
+    risk: 100
+    description_ru: Отмывание доходов
+    description_en: Laundering of proceeds from crime
+    category_group_id: 4
+    number: 25
+  - name: Exchange With High ML Risk
+    risk: 75
+    description_ru: Криптовалютная биржа с высоким риском отмывания средств
+    description_en: Cryptocurrency exchange with a high risk of money laundering
+    category_group_id: 5
+    number: 27
+  - name: Exchange With Very High ML Risk
+    risk: 100
+    description_ru: Криптовалютная биржа с очень высоким риском отмывания средств
+    description_en: Cryptocurrency exchange with a very high risk of money laundering
+    category_group_id: 5
+    number: 30
+  - name: P2P Exchange With High ML Risk
+    risk: 75
+    description_ru: Оператор P2P-обмена с высоким риском отмывания средств
+    description_en: P2P exchange operator with high risk of money laundering
+    category_group_id: 5
+    number: 42
+  - name: P2P Exchange With Very High ML Risk
+    risk: 90
+    description_ru: Оператор P2P-обмена с очень высоким риском отмывания средств
+    description_en: P2P exchange operator with a very high risk of money laundering
+    category_group_id: 5
+    number: 45
+  - name: OTC Exchange With Very High ML Risk
+    risk: 90
+    description_ru: Криптовалютный обменник с очень высоким риском отмывания средств
+    description_en: Cryptocurrency exchange with a very high risk of money laundering
+    category_group_id: 5
+    number: 57
+  - name: DDOS service
+    risk: 100
+    description_ru: Предоставление услуг DDOS
+    description_en: Providing DDOS services
+    category_group_id: 1
+    number: 49
+  - name: Scam ICO
+    risk: 100
+    description_ru: Поддельное ICO
+    description_en: Fake ICO
+    category_group_id: 1
+    number: 53
+  - name: Terrorism
+    risk: 100
+    description_ru: Участники и спонсоры террористической деятельности
+    description_en: Participants and sponsors of terrorist activities
+    category_group_id: 10
+    number: 60
+  - name: Phishing service
+    risk: 100
+    description_ru: Услуги фишинга
+    description_en: Phishing service
+    category_group_id: 1
+    number: 50
+  - name: Darknet Marketplace
+    risk: 100
+    description_ru: Cама площадка с high-risk деятельностью (ее адреса)
+    description_en: A website with high-risk activities
+    category_group_id: 12
+    number: 1
+  - name: Scam
+    risk: 100
+    description_ru: Получатели средств в результате мошенничества (включая пирамиды)
+    description_en: Recipients of funds as a result of fraud (including pyramid schemes)
+    category_group_id: 1
+    number: 51
+  - name: Sanction country
+    risk: 100
+    description_ru: Иран, Северная Корея, Крым, Венесуэла, Куба и сервисы из этих стран или территорий
+    description_en: Iran, North Korea, Crimea, Venezuela, Cuba and services from these countries or territories
+    category_group_id: 10
+    number: 59
+  - name: Stolen Credit Cards
+    risk: 100
+    description_ru: Средства, полученные кардерами в результате противоправной деятельности
+    description_en: Funds received by carders as a result of illegal activities
+    category_group_id: 1
+    number: 7
+  - name: Child Abuse
+    risk: 100
+    description_ru: Распространение запрещенных материалов с участием несовершеннолетних
+    description_en: Distribution of prohibited materials involving minors
+    category_group_id: 8
+    number: 6
+  - name: Personal data CIS
+    risk: 100
+    description_ru: Продажа персональных данных граждан иных стран СНГ (кроме РФ)
+    description_en: Sale of personal data of citizens of other CIS countries (except the Russian Federation)
+    category_group_id: 3
+    number: 10
+  - name: Personal data US
+    risk: 100
+    description_ru: Продажа персональных данных граждан США
+    description_en: Sale of personal data of US citizens
+    category_group_id: 3
+    number: 12
+  - name: Personal data other
+    risk: 100
+    description_ru: Продажа персональных данных граждан иных государств
+    description_en: Sale of personal data of citizens of other states
+    category_group_id: 3
+    number: 13
+  - name: Stolen DataBase
+    risk: 100
+    description_ru: Продажа баз данных (не пробивов, а именно самих баз данных)
+    description_en: Sale of databases (not penetrations, but the databases themselves)
+    category_group_id: 3
+    number: 14
+  - name: Smuggling precursors
+    risk: 100
+    description_ru: Участник контрабанды прекурсоров
+    description_en: Participant in the smuggling of precursors
+    category_group_id: 2
+    number: 16
+  - name: Smuggling people
+    risk: 100
+    description_ru: Участник контрабанды людей
+    description_en: Participant in people smuggling
+    category_group_id: 12
+    number: 17
+  - name: Smuggling weapons
+    risk: 100
+    description_ru: Участник контрабанды оружия
+    description_en: weapons smuggler
+    category_group_id: 12
+    number: 18
+  - name: Smuggling
+    risk: 100
+    description_ru: Участник контрабанды остальных товаров
+    description_en: Participant in the smuggling of other goods
+    category_group_id: 12
+    number: 19
+  - name: Illegal migration
+    risk: 100
+    description_ru: Организатор незаконной миграции
+    description_en: Organizer of illegal migration
+    category_group_id: 12
+    number: 20
+  - name: Human trafficking
+    risk: 100
+    description_ru: Торговля людьми (без контрабанды)
+    description_en: Human trafficking (without smuggling)
+    category_group_id: 12
+    number: 21
+  - name: Illegal weapons
+    risk: 100
+    description_ru: Продажа оружия
+    description_en: Sale of weapons
+    category_group_id: 12
+    number: 24
+  - name: Illegal financial transactions
+    risk: 100
+    description_ru: Незаконные финансовые операции
+    description_en: Illegal financial transactions
+    category_group_id: 4
+    number: 26
+  - name: Exchange With Low ML Risk
+    risk: 25
+    description_ru: Криптовалютная биржа с низким риском отмывания средств
+    description_en: Cryptocurrency exchange with a low risk of money laundering
+    category_group_id: 7
+    number: 28
+  - name: Exchange With Moderate ML Risk
+    risk: 50
+    description_ru: Криптовалютная биржа со средним риском отмывания средств
+    description_en: Cryptocurrency exchange with an average risk of money laundering
+    category_group_id: 6
+    number: 29
+  - name: Gambling
+    risk: 100
+    description_ru: Деятельность гемблинга
+    description_en: Gambling activity
+    category_group_id: 6
+    number: 32
+  - name: Illegal Service
+    risk: 100
+    description_ru: Иные формы противоправной деятельности, не указанные в других категориях
+    description_en: Other forms of illegal activity not specified in other categories
+    category_group_id: 12
+    number: 33
+  - name: Miner
+    risk: 0
+    description_ru: Майнер
+    description_en: Miner
+    category_group_id: 14
+    number: 34
+  - name: Mixing Service
+    risk: 100
+    description_ru: Криптовалютный миксер
+    description_en: Cryptocurrency mixer
+    category_group_id: 4
+    number: 35
+  - name: Online Wallet
+    risk: 50
+    description_ru: Онлайн кошелек криптовалют
+    description_en: Online cryptocurrency wallet
+    category_group_id: 6
+    number: 37
+  - name: PEP
+    risk: 75
+    description_ru: Политически значимое лицо
+    description_en: Politically exposed person
+    category_group_id: 9
+    number: 38
+  - name: Bridge
+    risk: 50
+    description_ru: Криптовалютный мост (вроде renBTC, WBTC и пр.)
+    description_en: Cryptocurrency bridge (like renBTC, WBTC, etc.)
+    category_group_id: 13
+    number: 40
+  - name: DEX (excluding Bridges)
+    risk: 50
+    description_ru: Адреса депозитов различных DEX
+    description_en: Deposit addresses of various DEXs
+    category_group_id: 13
+    number: 41
+  - name: P2P Exchange With Moderate ML Risk
+    risk: 50
+    description_ru: Оператор P2P-обмена со средним риском отмывания средств
+    description_en: P2P exchange operator with medium risk of money laundering
+    category_group_id: 6
+    number: 44
+  - name: Payment Processor
+    risk: 50
+    description_ru: Оператор криптовалютных платежей
+    description_en: Cryptocurrency payment processor
+    category_group_id: 6
+    number: 46
+  - name: Ransom
+    risk: 100
+    description_ru: Получатель выкупа за вредоносное ПО
+    description_en: Malware ransom
+    category_group_id: 15
+    number: 47
+  - name: OTC Exchange With High ML Risk
+    risk: 75
+    description_ru: Криптовалютный обменник с высоким риском отмывания средств
+    description_en: Cryptocurrency exchange with a high risk of money laundering
+    category_group_id: 5
+    number: 54
+  - name: OTC Exchange With Low ML Risk
+    risk: 25
+    description_ru: Криптовалютный обменник с низким риском отмывания средств
+    description_en: Cryptocurrency exchange with low risk of money laundering
+    category_group_id: 7
+    number: 55
+  - name: OTC Exchange With Moderate ML Risk
+    risk: 50
+    description_ru: Криптовалютный обменник со средним риском отмывания средств
+    description_en: Cryptocurrency exchange with medium risk of money laundering
+    category_group_id: 6
+    number: 56
+  - name: ATM
+    risk: 50
+    description_ru: Криптовалютный банкомат
+    description_en: Cryptocurrency ATM
+    category_group_id: 6
+    number: 61
+  - name: Blackmail
+    risk: 100
+    description_ru: Письма с требованием выкупа под видом взлома компа или распространения порочащих сведений
+    description_en: Ransom letters under the guise of hacking a computer or spreading defamatory information
+    category_group_id: 1
+    number: 8
+  - name: Fraudulent Exchange
+    risk: 100
+    description_ru: Фейковая криптовалютная биржа (разновидность скама)
+    description_en: Fake cryptocurrency exchange (a kind of scam)
+    category_group_id: 1
+    number: 31
+  - name: Malware (excluding Ransom)
+    risk: 100
+    description_ru: Разработчики и продавцы вредоносного ПО (скрытые майнеры, инсталлеры и прочее аналогичное)
+    description_en: Developers and sellers of malware (hidden miners, installers, etc.)
+    category_group_id: 1
+    number: 48
+  - name: Paramilitary organization
+    risk: 100
+    description_ru: Официальные аккаунты военизированных организаций и их участников
+    description_en: Official accounts of paramilitary organizations and their participants
+    category_group_id: 10
+    number: 62
+  - name: Arrested assets
+    risk: 0
+    description_ru: Арестованные средства - активы, изъятые официальными органами в ходе противодействия преступной активности
+    description_en: Arrested assets
+    category_group_id: 14
+    number: 67
+  - name: Whale
+    risk: 10
+    description_ru: Киты
+    description_en: Whale
+    category_group_id:
+    number: 68
+  - name: Green Point
+    risk: 50
+    description_ru: Зеленая точка
+    description_en: Green Point
+    category_group_id:
+    number: 69
+  - name: Red Point
+    risk: 100
+    description_ru: Красная (коричневая) точка
+    description_en: Red Point
+    category_group_id:
+    number: 70
+  - name: Unnamed service
+    risk: 75
+    description_ru: Неизвестный сервис
+    description_en: Unnamed service
+    category_group_id: 5
+    number: 71
+  - name: Sanctions
+    risk: 100
+    description_ru: Лица и/или организации, попавшие под санкции
+    description_en: Sanctions
+    category_group_id: 10
+    number: 72
+  - name: Other
+    risk: 50
+    description_ru: Категорию может использовать только модератор, для всякого хлама непонятного
+    description_en: Other
+    category_group_id: 6
+    number: 66
+  - name: Media
+    risk: 25
+    description_ru: Средства массовой информации и авторитетные блогеры
+    description_en: Media
+    category_group_id: 11
+    number: 65
+  - name: Precursors
+    risk: 85
+    description_ru: Отдельный участник high-risk деятельности конкретно в сфере продажи прекурсоров (товаров и веществ, применяемых при создании наркотиков)
+    description_en: An individual participant in high-risk activities specifically in the area of sale of precursors (goods and substances used in the creation of drugs)
+    category_group_id: 2
+    number: 4
+  - name: Cracked software
+    risk: 100
+    description_ru: Продажа ПО и информационных сервисов с нарушением прав правообладателя (VPN, ключи от лицензий, взлом ПО с целью его использования без оплаты лицензии)
+    description_en: Cracked software
+    category_group_id: 1
+    number: 64
+  - name: State bodies
+    risk: 75
+    description_ru: Официальные реквизиты государственных органов различных государств (помимо 62)
+    description_en: State bodies
+    category_group_id: 9
+    number: 63

@@ -1,0 +1,5 @@
+*.test
+*.out
+*.profile
+.idea
+.vscode

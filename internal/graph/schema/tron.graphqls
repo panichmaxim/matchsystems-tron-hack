@@ -1,0 +1,15 @@
+extend type Query {
+    tronFindAddressByHash(address: String!): FindAddressByHashNodeResponse!
+    tronFindTransactionsByAddress(hash: String!, page: Int!, pageSize: Int!): NodeListResponse!
+    tronFindTransactionByHash(hash: String!): NodeEntityResponse!
+    tronFindIncomingTransactionAddress(hash: String!, page: Int!, pageSize: Int!): NodeListResponse!
+    tronFindOutcomingTransactionAddress(hash: String!, page: Int!, pageSize: Int!): NodeListResponse!
+    tronFindBlockByTransaction(hash: String!): NodeEntityResponse!
+    tronFindBlockByHeight(height: Int!): NodeEntityResponse!
+    tronFindTransactionsInBlock(height: Int!, page: Int!, pageSize: Int!): NodeListResponse!
+    tronFindBlockByHash(hash: String!): NodeEntityResponse!
+    tronFindMentionsByAddress(address: String!, page: Int!, pageSize: Int!): NodeListResponse! @auth(permissions: ["subscription.explorer.mentions"])
+    tronFindContactByAddress(address: String!): NodeEntityResponse! @auth(permissions: ["subscription.explorer.contacts"])
+    tronRisk(address: String!): RiskResponse! @auth(permissions: ["subscription.explorer.riskscore"])
+    tronSearch(query: String!, page: Int! = 0, limit: Int! = 100, wildcard: Boolean): SearchResponse! @auth(permissions: ["subscription.explorer.mentions"])
+}

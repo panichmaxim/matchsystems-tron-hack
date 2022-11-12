@@ -1,0 +1,37 @@
+- model: BillingRequest
+  rows:
+    - user_id: '{{ $.User.user.ID }}'
+      query: "now"
+      reported_category: 1
+      network: "btc"
+      risk: 50
+      reported_risk: 50
+      created_at: "{{ now }}"
+    - user_id: '{{ $.User.user.ID }}'
+      query: "prev_day"
+      reported_category: 1
+      network: "btc"
+      risk: 50
+      reported_risk: 50
+      created_at: "{{ prev_day }}"
+    - user_id: '{{ $.User.user.ID }}'
+      query: "next_day"
+      reported_category: 1
+      network: "btc"
+      risk: 50
+      reported_risk: 50
+      created_at: "{{ next_day }}"
+    - user_id: '{{ $.User.user.ID }}'
+      query: "next_week"
+      reported_category: 1
+      network: "btc"
+      risk: 50
+      reported_risk: 50
+      created_at: "{{ next_week }}"
+    - user_id: '{{ $.User.user.ID }}'
+      query: "prev_week"
+      reported_category: 1
+      network: "btc"
+      risk: 50
+      reported_risk: 50
+      created_at: "{{ prev_week }}"

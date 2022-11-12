@@ -15,7 +15,61 @@ type NodeEntityResponse {
     node: Node
 }
 
+type FindAddressByHashNode {
+    total: Float!
+    address: String!
+}
+
+type FindAddressByHashNodeResponse {
+    errors: Any
+    node: FindAddressByHashNode
+}
+
+type RiskResponse {
+    errors: Any
+    risk: Risk
+}
+
+type RiskData {
+    category: Category
+    risk: Float
+}
+
+type Risk {
+    risk: Float
+    reported: RiskData
+    wallet: RiskData
+    calculated: CalculatedRisk
+}
+
+type RiskNodeEntityResponse {
+    errors: Any
+    node: Node
+    risk: CalculatedRisk
+}
+
 type NodeCountResponse {
     errors: Any
     has: Boolean
+}
+
+type CalculateItem {
+    id: ID!
+    total: Float!
+    percent: Float!
+    percent_raw: Float!
+    risk: Float!
+    risk_raw: Float!
+    i18n: DirectoryI18n!
+}
+
+type DirectoryI18n {
+    ru: String!
+    en: String!
+}
+
+type CalculatedRisk {
+    total: Float!
+    risk: Float!
+    items: [CalculateItem!]!
 }

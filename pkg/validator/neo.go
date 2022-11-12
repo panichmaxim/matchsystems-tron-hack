@@ -5,27 +5,27 @@ import (
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 )
 
-type NeoValidation interface {
-	FindContactByAddress(ctx context.Context, address string) error
-	FindAddressByHash(ctx context.Context, address string) error
-	FindTransactionsByAddress(ctx context.Context, address string, page, pageSize int) error
-	FindWalletForAddress(ctx context.Context, address string) error
-	FindMentionsForAddress(ctx context.Context, address string, page, pageSize int) error
-	FindRiskScore(ctx context.Context, address string) error
-	FindTransactionByHash(ctx context.Context, address string) error
-	FindIncomingTransactions(ctx context.Context, txid string, page, pageSize int) error
-	FindOutcomingTransactions(ctx context.Context, txid string, page, pageSize int) error
-	FindBlockByTransaction(ctx context.Context, txid string) error
-	FindBlockByNumber(ctx context.Context, height int) error
-	FindTransactionsInBlock(ctx context.Context, height int, page, pageSize int) error
-	FindAllInputAndOutputByTransaction(ctx context.Context, txid string, page, pageSize int) error
-	FindBlockByHash(ctx context.Context, hash string) error
-	FindTransactionsInBlockByHash(ctx context.Context, hash string, page, pageSize int) error
-	FindWalletByWid(ctx context.Context, wid string) error
-	FindWalletAddresses(ctx context.Context, wid string, page, pageSize int) error
-}
+var _ BtcNeoValidation = (*validationImpl)(nil)
 
-var _ NeoValidation = (*validationImpl)(nil)
+type BtcNeoValidation interface {
+	BtcFindContactByAddress(ctx context.Context, address string) error
+	BtcFindAddressByHash(ctx context.Context, address string) error
+	BtcFindTransactionsByAddress(ctx context.Context, address string, page, pageSize int) error
+	BtcFindWalletForAddress(ctx context.Context, address string) error
+	BtcFindMentionsForAddress(ctx context.Context, address string, page, pageSize int) error
+	BtcFindRiskScore(ctx context.Context, address string) error
+	BtcFindTransactionByHash(ctx context.Context, address string) error
+	BtcFindIncomingTransactions(ctx context.Context, txid string, page, pageSize int) error
+	BtcFindOutcomingTransactions(ctx context.Context, txid string, page, pageSize int) error
+	BtcFindBlockByTransaction(ctx context.Context, txid string) error
+	BtcFindBlockByNumber(ctx context.Context, height int) error
+	BtcFindTransactionsInBlock(ctx context.Context, height int, page, pageSize int) error
+	BtcFindAllInputAndOutputByTransaction(ctx context.Context, txid string, page, pageSize int) error
+	BtcFindBlockByHash(ctx context.Context, hash string) error
+	BtcFindTransactionsInBlockByHash(ctx context.Context, hash string, page, pageSize int) error
+	BtcFindWalletByWid(ctx context.Context, wid string) error
+	BtcFindWalletAddresses(ctx context.Context, wid string, page, pageSize int) error
+}
 
 var btcAddressRules = []validation.Rule{
 	validation.Required,
@@ -61,15 +61,15 @@ func (v *validationImpl) btcAddressValidate(ctx context.Context, address string)
 	return nil
 }
 
-func (v *validationImpl) FindContactByAddress(ctx context.Context, address string) error {
+func (v *validationImpl) BtcFindContactByAddress(ctx context.Context, address string) error {
 	return v.btcAddressValidate(ctx, address)
 }
 
-func (v *validationImpl) FindAddressByHash(ctx context.Context, address string) error {
+func (v *validationImpl) BtcFindAddressByHash(ctx context.Context, address string) error {
 	return v.btcAddressValidate(ctx, address)
 }
 
-func (v *validationImpl) FindTransactionsByAddress(ctx context.Context, address string, page, pageSize int) error {
+func (v *validationImpl) BtcFindTransactionsByAddress(ctx context.Context, address string, page, pageSize int) error {
 	errs := Errors{}
 
 	if e := IsValid(address, btcAddressRules...); len(e) > 0 {
@@ -91,11 +91,11 @@ func (v *validationImpl) FindTransactionsByAddress(ctx context.Context, address 
 	return nil
 }
 
-func (v *validationImpl) FindWalletForAddress(ctx context.Context, address string) error {
+func (v *validationImpl) BtcFindWalletForAddress(ctx context.Context, address string) error {
 	return v.btcAddressValidate(ctx, address)
 }
 
-func (v *validationImpl) FindMentionsForAddress(ctx context.Context, address string, page, pageSize int) error {
+func (v *validationImpl) BtcFindMentionsForAddress(ctx context.Context, address string, page, pageSize int) error {
 	errs := Errors{}
 
 	if e := IsValid(address, btcAddressRules...); len(e) > 0 {
@@ -117,11 +117,11 @@ func (v *validationImpl) FindMentionsForAddress(ctx context.Context, address str
 	return nil
 }
 
-func (v *validationImpl) FindRiskScore(ctx context.Context, address string) error {
+func (v *validationImpl) BtcFindRiskScore(ctx context.Context, address string) error {
 	return v.btcAddressValidate(ctx, address)
 }
 
-func (v *validationImpl) FindTransactionByHash(ctx context.Context, hash string) error {
+func (v *validationImpl) BtcFindTransactionByHash(ctx context.Context, hash string) error {
 	errs := Errors{}
 
 	if e := IsValid(hash, btcHashRules...); len(e) > 0 {
@@ -135,7 +135,7 @@ func (v *validationImpl) FindTransactionByHash(ctx context.Context, hash string)
 	return nil
 }
 
-func (v *validationImpl) FindIncomingTransactions(ctx context.Context, txid string, page, pageSize int) error {
+func (v *validationImpl) BtcFindIncomingTransactions(ctx context.Context, txid string, page, pageSize int) error {
 	errs := Errors{}
 
 	if e := IsValid(txid, btcTransactionRules...); len(e) > 0 {
@@ -157,7 +157,7 @@ func (v *validationImpl) FindIncomingTransactions(ctx context.Context, txid stri
 	return nil
 }
 
-func (v *validationImpl) FindOutcomingTransactions(ctx context.Context, txid string, page, pageSize int) error {
+func (v *validationImpl) BtcFindOutcomingTransactions(ctx context.Context, txid string, page, pageSize int) error {
 	errs := Errors{}
 
 	if e := IsValid(txid, btcTransactionRules...); len(e) > 0 {
@@ -179,7 +179,7 @@ func (v *validationImpl) FindOutcomingTransactions(ctx context.Context, txid str
 	return nil
 }
 
-func (v *validationImpl) FindBlockByTransaction(ctx context.Context, txid string) error {
+func (v *validationImpl) BtcFindBlockByTransaction(ctx context.Context, txid string) error {
 	errs := Errors{}
 
 	if e := IsValid(txid, btcTransactionRules...); len(e) > 0 {
@@ -193,7 +193,7 @@ func (v *validationImpl) FindBlockByTransaction(ctx context.Context, txid string
 	return nil
 }
 
-func (v *validationImpl) FindBlockByNumber(ctx context.Context, height int) error {
+func (v *validationImpl) BtcFindBlockByNumber(ctx context.Context, height int) error {
 	errs := Errors{}
 
 	if e := IsValid(height, validation.Required); len(e) > 0 {
@@ -207,7 +207,7 @@ func (v *validationImpl) FindBlockByNumber(ctx context.Context, height int) erro
 	return nil
 }
 
-func (v *validationImpl) FindTransactionsInBlock(ctx context.Context, height int, page, pageSize int) error {
+func (v *validationImpl) BtcFindTransactionsInBlock(ctx context.Context, height int, page, pageSize int) error {
 	errs := Errors{}
 
 	if e := IsValid(height, validation.Required); len(e) > 0 {
@@ -229,7 +229,7 @@ func (v *validationImpl) FindTransactionsInBlock(ctx context.Context, height int
 	return nil
 }
 
-func (v *validationImpl) FindAllInputAndOutputByTransaction(ctx context.Context, txid string, page, pageSize int) error {
+func (v *validationImpl) BtcFindAllInputAndOutputByTransaction(ctx context.Context, txid string, page, pageSize int) error {
 	errs := Errors{}
 
 	if e := IsValid(txid, btcTransactionRules...); len(e) > 0 {
@@ -251,7 +251,7 @@ func (v *validationImpl) FindAllInputAndOutputByTransaction(ctx context.Context,
 	return nil
 }
 
-func (v *validationImpl) FindBlockByHash(ctx context.Context, hash string) error {
+func (v *validationImpl) BtcFindBlockByHash(ctx context.Context, hash string) error {
 	errs := Errors{}
 
 	if e := IsValid(hash, btcHashRules...); len(e) > 0 {
@@ -265,7 +265,7 @@ func (v *validationImpl) FindBlockByHash(ctx context.Context, hash string) error
 	return nil
 }
 
-func (v *validationImpl) FindTransactionsInBlockByHash(ctx context.Context, hash string, page, pageSize int) error {
+func (v *validationImpl) BtcFindTransactionsInBlockByHash(ctx context.Context, hash string, page, pageSize int) error {
 	errs := Errors{}
 
 	if e := IsValid(hash, btcHashRules...); len(e) > 0 {
@@ -287,10 +287,10 @@ func (v *validationImpl) FindTransactionsInBlockByHash(ctx context.Context, hash
 	return nil
 }
 
-func (v *validationImpl) FindWalletByWid(ctx context.Context, wid string) error {
+func (v *validationImpl) BtcFindWalletByWid(ctx context.Context, wid string) error {
 	errs := Errors{}
 
-	if e := IsValid(wid, btcHashRules...); len(e) > 0 {
+	if e := IsValid(wid, validation.Required); len(e) > 0 {
 		errs.AddErrors("wid", e...)
 	}
 
@@ -301,7 +301,7 @@ func (v *validationImpl) FindWalletByWid(ctx context.Context, wid string) error 
 	return nil
 }
 
-func (v *validationImpl) FindWalletAddresses(ctx context.Context, wid string, page, pageSize int) error {
+func (v *validationImpl) BtcFindWalletAddresses(ctx context.Context, wid string, page, pageSize int) error {
 	errs := Errors{}
 
 	if e := IsValid(wid, validation.Required); len(e) > 0 {

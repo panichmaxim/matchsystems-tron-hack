@@ -29,6 +29,7 @@ var fixturesFS embed.FS
 
 var fixtures = []string{
 	"fixtures/base.yaml",
+	"fixtures/category.yaml",
 }
 
 func main() {
@@ -82,10 +83,11 @@ func main() {
 		}
 	}
 
-	application, err := app.NewApp(sharedConfig, sqlImpl)
+	application, err := app.NewApp(ctx, sharedConfig, sqlImpl)
 	if err != nil {
 		log.Fatal().Err(err).Msg("err")
 	}
+
 	defer func(application *app.App, ctx context.Context) {
 		err := application.Close(ctx)
 		if err != nil {
